@@ -49,7 +49,7 @@ if __name__ == "__main__":
             print(colored('====> ', 'green') + 'Snapshot::', kvs['snapshot_name'])
             print(colored('====> ', 'red') + 'LR:', scheduler.get_lr())
 
-            train_loss = 0#utils.epoch_pass(net, train_loader, criterion, optimizer, writers[fold_id])
+            train_loss = utils.epoch_pass(net, train_loader, criterion, optimizer, writers[fold_id])
             val_out = utils.epoch_pass(net, val_loader, criterion, None, None)
             val_loss, val_ids, gt, preds = val_out
             metrics.log_metrics(writers[fold_id], train_loss, val_loss, gt, preds)

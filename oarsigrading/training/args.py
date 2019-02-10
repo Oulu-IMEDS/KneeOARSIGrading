@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument('--use_bnorm', type=bool, default=False, help='whether to use batchnorm in the attention head')
     parser.add_argument('--attention_hidden', type=int, default=128, help='Hidden layer size in the attention block')
     parser.add_argument('--snapshot_comparator', type=str, choices=['lt', 'gt'], default='lt')
-
+    parser.add_argument('--keep_snapshots', type=bool, default=False)
     parser.add_argument('--unfreeze_epoch', type=int, default=1,
                         help='Epoch at which to unfreeze the layers of the backbone')
 

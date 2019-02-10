@@ -10,7 +10,11 @@ def log_metrics(boardlogger, train_loss, val_loss, val_pred, val_gt):
         'epoch': kvs['cur_epoch'],
         'val_loss': val_loss
     }
-    kappas = [cohen_kappa_score(gt, pred, weights='quadratic') for (gt, pred) in zip(val_gt, val_pred)]
+
+    kappas = []
+    for task_id in range(val_gt.shape[1]):
+        kappas.append(cohen_kappa_score(val_gt[:, task_id], val_pred[:, task_id], weights='quadratic'))
+
     res.update({'kappa_ostl': kappas[0],
                 'kappa_osfl': kappas[1],
                 'kappa_jsl': kappas[2],
