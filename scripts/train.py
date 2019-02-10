@@ -3,7 +3,7 @@ import sys
 from termcolor import colored
 from oarsigrading.kvs import GlobalKVS
 from oarsigrading.training import session
-
+from oarsigrading.training import utils
 
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
@@ -28,3 +28,30 @@ if __name__ == "__main__":
         train_index, val_index = kvs['cv_split_train'][fold_id]
         train_loader, val_loader = session.init_loaders(kvs[f'{kvs["args"].train_set}_meta'].iloc[train_index],
                                                         kvs[f'{kvs["args"].train_set}_meta'].iloc[val_index])
+
+        net, criterion = utils.init_model()
+        net.train(False)
+        utils.net_core(net).classifier.train(True)
+        optimizer = utils.init_optimizer(utils.layer_params(net, 'classifier'))
+        scheduler = utils.init_scheduler(optimizer, 0)
+        for epoch in range(kvs['args'].n_epochs):
+            scheduler.step()
+            kvs.update('cur_epoch', epoch)
+            if epoch == kvs['args'].unfreeze_epoch:
+                print(colored('====> ', 'red') + 'Unfreezing the layers!')
+                # Making the whole model trainable
+                net.train(True)
+                optimizer.add_param_group({'params': utils.layer_params(net, 'encoder')})
+                scheduler = utils.init_scheduler(optimizer, train_loader)
+
+            print(colored('====> ', 'green') + 'Snapshot::', kvs['snapshot_name'])
+            print(colored('====> ', 'red') + 'LR:', scheduler.get_lr())
+
+            train_loss = utils.epoch_pass(net, train_loader, criterion, optimizer, writers[fold_id])
+            """
+            if epoch > kvs['args'].start_val:
+                val_out = utils.epoch_pass(net, val_loader, criterion, None, None)
+                val_loss, val_ids, gt, preds = val_out
+                #metrics.log_metrics(writers[fold_id], train_loss, val_loss, gt, preds)
+                session.save_checkpoint(net, optimizer)
+            """

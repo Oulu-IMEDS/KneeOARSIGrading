@@ -1,5 +1,6 @@
 from torch import nn
 import torch
+import torch.nn.functional as F
 from oarsigrading.training.model_zoo import SeResNet
 
 
@@ -32,16 +33,49 @@ class AttentionHead(nn.Module):
         return clf_result.view(o.size(0), -1), att_weights
 
 
+class MultiTaskAttentionHead(nn.Module):
+    def __init__(self, n_feats, n_tasks, n_cls, att_h_size, att_bnorm, dropout):
+        super(MultiTaskAttentionHead, self).__init__()
+        self.n_tasks = n_tasks
+        for j in range(n_tasks):
+            self.__dict__['_modules'][f'head_{j}'] = AttentionHead(n_feats, n_cls, att_h_size, att_bnorm, dropout)
+
+    def forward(self, features):
+        res = []
+        for j in range(self.n_tasks):
+            res.append(self.__dict__['_modules'][f'head_{j}'](features))
+        return res
+
+
 class OARSIGradingNet(nn.Module):
     def __init__(self, bb_width=50, n_tasks=6, n_cls=4, dropout=0.5, att_bnorm=False, att_h_size=128):
         super(OARSIGradingNet, self).__init__()
         backbone = SeResNet(bb_width, 0, 1)
         self.encoder = backbone.encoder[:-1]
         n_feats = backbone.classifier[-1].in_features
-        self.n_tasks = n_tasks
-        for j in range(n_tasks):
-            self.__dict__['_modules'][f'head_{j}'] = AttentionHead(n_feats, n_cls, att_h_size, att_bnorm, dropout)
+        self.classifier = MultiTaskAttentionHead(n_feats, n_tasks, n_cls, att_h_size, att_bnorm, dropout)
 
     def forward(self, x):
         features = self.encoder(x)
-        return [self.__dict__['_modules'][f'head_{j}'](features) for j in range(self.n_tasks)]
+        return self.classifier(features)
+
+
+class MultiTaskAttentionLoss(nn.Module):
+    def __init__(self, w_ratio=0.5):
+        super(MultiTaskAttentionLoss, self).__init__()
+        self.cls_loss = nn.CrossEntropyLoss()
+        self.att_loss = nn.BCEWithLogitsLoss()
+        self.w_ratio = w_ratio
+
+    def forward(self, pred, target_cls, target_att):
+        loss = 0
+        n_tasks = len(pred)
+
+        for task_id in range(n_tasks):
+            loss += self.cls_loss(pred[task_id][0], target_cls[:, task_id]).mul(self.w_ratio)
+            #fmap_size = target_att.size()[-2:]
+            #ups_attention = F.interpolate(pred[task_id][1], fmap_size, mode='bilinear', align_corners=True).squeeze()
+            #loss += self.att_loss(ups_attention, target_att[:, task_id]).mul(1 - self.w_ratio)
+
+        loss/=n_tasks
+        return loss

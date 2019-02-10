@@ -15,7 +15,7 @@ from oarsigrading.dataset.metadata.most import get_most_meta
 
 
 def read_gs(fpath):
-    return cv2.imread(fpath, 0)
+    return cv2.imread(fpath)
 
 
 def build_dataset_meta(args, img_dir_name='MOST_OAI_FULL_0_2'):

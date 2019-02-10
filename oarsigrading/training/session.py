@@ -12,8 +12,6 @@ from tqdm import tqdm
 import pandas as pd
 from sklearn.model_selection  import GroupKFold
 
-from torch import nn
-from torch.nn import DataParallel
 
 from oarsigrading.dataset.utils import build_dataset_meta
 from oarsigrading.kvs import GlobalKVS, git_info
@@ -21,7 +19,7 @@ from oarsigrading.training.args import parse_args
 from oarsigrading.training.dataset import OARSIGradingDataset
 from oarsigrading.dataset.utils import make_weights_for_multilabel, WeightedRandomSampler
 from oarsigrading.training.transforms import init_transforms
-
+from oarsigrading.training.utils import net_core
 DEBUG = sys.gettrace() is not None
 
 
@@ -187,17 +185,6 @@ def init_folds():
     kvs.update('cv_split_train', cv_split_train)
     kvs.save_pkl(os.path.join(kvs['args'].snapshots, kvs['snapshot_name'], 'session.pkl'))
     return writers
-
-
-def net_core(net: nn.Module) -> nn.Module:
-    if isinstance(net, DataParallel):
-        return net.module
-    else:
-        return net
-
-
-def layer_params(net: nn.Module, layer_name: str):
-    return getattr(net_core(net), layer_name).parameters()
 
 
 def save_checkpoint(model, optimizer):
