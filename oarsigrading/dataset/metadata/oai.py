@@ -1,6 +1,6 @@
 import os
-from oarsigrading.metadata.constants import follow_up_dict_oai
-from oarsigrading.metadata.utils import read_sas7bdat
+from oarsigrading.dataset.metadata import follow_up_dict_oai
+from oarsigrading.dataset.metadata.utils import read_sas7bdat
 import pandas as pd
 
 
