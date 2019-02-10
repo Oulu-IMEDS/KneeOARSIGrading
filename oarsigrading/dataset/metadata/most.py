@@ -1,5 +1,5 @@
 import os
-from oarsigrading.dataset.metadata import follow_up_dict_most
+from oarsigrading.dataset.metadata.constants import follow_up_dict_most
 from oarsigrading.dataset.metadata.utils import read_sas7bdat
 import pandas as pd
 
