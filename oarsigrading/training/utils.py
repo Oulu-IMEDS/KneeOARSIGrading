@@ -102,17 +102,15 @@ def epoch_pass(net: nn.Module, loader: DataLoader, criterion: nn.Module,
                 pbar.set_description(f'[{fold_id}] Train:: [{epoch} / {max_epoch}]:: '
                                      f'{running_loss / (i + 1):.3f} | {loss.item():.3f}')
             else:
-                raise NotImplementedError
-                """
-                for o in outputs:
-                    predicts.append(o[0].argmax)
-                if isinstance(outputs, tuple):
-                    predicts.append(torch.sigmoid(outputs[0]).to('cpu').numpy())
-                else:
-                    predicts.append(torch.sigmoid(outputs).to('cpu').numpy())
-                fnames.extend(batch['Id'])
-                gt.append(batch['label'].numpy())
-                """
+                for task_id, (o, _) in enumerate(outputs):
+                    if len(predicts) != len(outputs):
+                        predicts.append(o.cpu().numpy().argmax(1).tolist())
+                    else:
+                        predicts[task_id].extend(o.cpu().numpy().argmax(1).tolist())
+
+                fnames.extend(batch['ID'])
+                gt.append(batch['target'].numpy())
+
                 pbar.set_description(f'[{fold_id}] Validating [{epoch} / {max_epoch}]:')
             if writer is not None and optimizer is not None:
                 writer.add_scalar('train_logs/loss', loss.item(), kvs['cur_epoch'] * len(loader) + i)
@@ -125,7 +123,7 @@ def epoch_pass(net: nn.Module, loader: DataLoader, criterion: nn.Module,
     if optimizer is not None:
         return running_loss / n_batches
 
-    return running_loss / n_batches, fnames, np.vstack(gt), np.vstack(predicts)
+    return running_loss / n_batches, fnames, np.vstack(gt).squeeze(), np.vstack(predicts).T.copy()
 
 
 def init_scheduler(optimizer: Optimizer, epoch_start: int) -> MultiStepLR:

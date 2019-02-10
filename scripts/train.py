@@ -1,9 +1,11 @@
 import cv2
 import sys
 from termcolor import colored
+
 from oarsigrading.kvs import GlobalKVS
 from oarsigrading.training import session
 from oarsigrading.training import utils
+from oarsigrading.evaluation import metrics
 
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
@@ -42,16 +44,13 @@ if __name__ == "__main__":
                 # Making the whole model trainable
                 net.train(True)
                 optimizer.add_param_group({'params': utils.layer_params(net, 'encoder')})
-                scheduler = utils.init_scheduler(optimizer, train_loader)
+                scheduler = utils.init_scheduler(optimizer, epoch)
 
             print(colored('====> ', 'green') + 'Snapshot::', kvs['snapshot_name'])
             print(colored('====> ', 'red') + 'LR:', scheduler.get_lr())
 
-            train_loss = utils.epoch_pass(net, train_loader, criterion, optimizer, writers[fold_id])
-            """
-            if epoch > kvs['args'].start_val:
-                val_out = utils.epoch_pass(net, val_loader, criterion, None, None)
-                val_loss, val_ids, gt, preds = val_out
-                #metrics.log_metrics(writers[fold_id], train_loss, val_loss, gt, preds)
-                session.save_checkpoint(net, optimizer)
-            """
+            train_loss = 0#utils.epoch_pass(net, train_loader, criterion, optimizer, writers[fold_id])
+            val_out = utils.epoch_pass(net, val_loader, criterion, None, None)
+            val_loss, val_ids, gt, preds = val_out
+            metrics.log_metrics(writers[fold_id], train_loss, val_loss, gt, preds)
+            session.save_checkpoint(net, optimizer)

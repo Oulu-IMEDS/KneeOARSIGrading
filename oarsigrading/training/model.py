@@ -17,20 +17,20 @@ class AttentionHead(nn.Module):
 
         clf_layers = []
         if use_bnorm:
-            clf_layers.append(nn.BatchNorm2d(n_features))
+            clf_layers.append(nn.BatchNorm1d(n_features))
         if drop > 0:
             clf_layers.append(nn.Dropout(drop))
 
-        clf_layers.append(nn.Conv2d(n_features, n_cls, kernel_size=1))
+        clf_layers.append(nn.Linear(n_features, n_cls))
 
         self.classifier = nn.Sequential(*clf_layers)
 
     def forward(self, o):
         att_weights = self.weight_generator(o)
         att_weights_norm = torch.sigmoid(att_weights)
-        clf_result = self.classifier(o*att_weights_norm)
+        clf_result = self.classifier(torch.sum(o*att_weights_norm, dim=[2, 3]))
         # Weights are not normalized and should go to BCE loss with logits
-        return clf_result.view(o.size(0), -1), att_weights
+        return clf_result, att_weights
 
 
 class MultiTaskAttentionHead(nn.Module):
