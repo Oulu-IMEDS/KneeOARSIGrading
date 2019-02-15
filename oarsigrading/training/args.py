@@ -11,11 +11,11 @@ def parse_args():
     parser.add_argument('--train_set', type=str, default='oai', choices=['most', 'oai'],
                         help='Dataset to be used for testing.')
 
-    parser.add_argument('--backbone_width', type=int, default=50, help='Width of SE-Resnet')
+    parser.add_argument('--backbone_width', type=int, default=18, help='Width of SE-Resnet')
     parser.add_argument('--weighted_sampling', type=bool, default=False, help='Whether to weigh samples')
     parser.add_argument('--imsize', type=int, default=700)
     parser.add_argument('--crop_size', type=int, default=650)
-    parser.add_argument('--inp_size', type=int, default=350)
+    parser.add_argument('--inp_size', type=int, default=512)
     parser.add_argument('--lr_drop', type=list, default=[10, ])
     parser.add_argument('--lr_drop_gamma', type=list, default=0.1)
     parser.add_argument('--optimizer', type=str, choices=['sgd', 'adam'], default='adam')
@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument('--attention_hidden', type=int, default=128, help='Hidden layer size in the attention block')
     parser.add_argument('--snapshot_comparator', type=str, choices=['lt', 'gt'], default='lt')
     parser.add_argument('--keep_snapshots', type=bool, default=False)
-    parser.add_argument('--unfreeze_epoch', type=int, default=1,
+    parser.add_argument('--unfreeze_epoch', type=int, default=0,
                         help='Epoch at which to unfreeze the layers of the backbone')
 
     parser.add_argument('--snapshots', default='/media/lext/FAST/OARSI_grading_project/workdir/oarsi_grades_snapshots/',

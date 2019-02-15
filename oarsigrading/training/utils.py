@@ -89,12 +89,12 @@ def epoch_pass(net: nn.Module, loader: DataLoader, criterion: nn.Module,
 
             # forward + backward + optimize
             labels = batch['target'].squeeze().to(device)
-            #att_masks = batch['att_masks'].squeeze().to(device)
+            att_masks = batch['att_masks'].squeeze().to(device)
             inputs = batch['img'].squeeze().to(device)
 
             outputs = net(inputs)
 
-            loss = criterion(outputs, labels, None)
+            loss = criterion(outputs, labels, att_masks)
 
             if optimizer is not None:
                 loss.backward()

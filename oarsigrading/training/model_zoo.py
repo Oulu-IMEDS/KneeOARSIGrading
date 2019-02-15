@@ -10,7 +10,11 @@ class ViewerFC(nn.Module):
 class SeResNet(nn.Module):
     def __init__(self, layers, drop, ncls):
         super(SeResNet, self).__init__()
-        if layers == 50:
+        if layers == 18:
+            model = pretrainedmodels.__dict__['resnet18'](num_classes=1000, pretrained='imagenet')
+        elif layers == 34:
+            model = pretrainedmodels.__dict__['resnet34'](num_classes=1000, pretrained='imagenet')
+        elif layers == 50:
             model = pretrainedmodels.__dict__['se_resnet50'](num_classes=1000, pretrained='imagenet')
         elif layers == 101:
             model = pretrainedmodels.__dict__['se_resnet101'](num_classes=1000, pretrained='imagenet')

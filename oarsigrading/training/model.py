@@ -73,9 +73,8 @@ class MultiTaskAttentionLoss(nn.Module):
 
         for task_id in range(n_tasks):
             loss += self.cls_loss(pred[task_id][0], target_cls[:, task_id]).mul(self.w_ratio)
-            #fmap_size = target_att.size()[-2:]
-            #ups_attention = F.interpolate(pred[task_id][1], fmap_size, mode='bilinear', align_corners=True).squeeze()
-            #loss += self.att_loss(ups_attention, target_att[:, task_id]).mul(1 - self.w_ratio)
+            loss += self.att_loss(pred[task_id][1].squeeze(), target_att[:, task_id]).mul(1 - self.w_ratio)
 
-        loss/=n_tasks
+        loss /= n_tasks
+
         return loss
