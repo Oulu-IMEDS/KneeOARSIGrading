@@ -126,13 +126,10 @@ def normalize_channel_wise(tensor, mean, std):
 def pack_tensors(res):
     img_res, lndm_t, lndm_t, ostl, osfl, jsl, ostm, osfm, jsm = res
     to_tensor = transforms.ToTensor()
-    masks = gen_attention_masks(lndm_t.data, lndm_t.data, (img_res.shape[0], img_res.shape[1]))
-    masks = map(lambda x: cv2.resize(x, (16, 16)), masks)
-    masks = torch.stack(list(map(lambda x: x.unsqueeze(0), map(torch.from_numpy, masks))))
     img_res = to_tensor(img_res)
     grades = torch.FloatTensor(np.round([ostl, osfl, jsl, ostm, osfm, jsm]).astype(int)).unsqueeze(0)
 
-    return img_res, grades, masks
+    return img_res, grades
 
 
 def init_transforms(mean_vector, std_vector):

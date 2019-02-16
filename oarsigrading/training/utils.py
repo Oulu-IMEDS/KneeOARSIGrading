@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from oarsigrading.kvs import GlobalKVS
-from oarsigrading.training.model import MultiTaskAttentionLoss, OARSIGradingNet
+from oarsigrading.training.model import MultiTaskClassificationLoss, OARSIGradingNet
 
 
 def net_core(net: nn.Module) -> nn.Module:
@@ -32,7 +32,7 @@ def layer_params(net: nn.Module, layer_name: str):
 
 
 def init_loss() -> nn.Module:
-    return MultiTaskAttentionLoss()
+    return MultiTaskClassificationLoss()
 
 
 def init_model() -> Tuple[nn.Module, nn.Module]:
@@ -40,7 +40,7 @@ def init_model() -> Tuple[nn.Module, nn.Module]:
 
     net = OARSIGradingNet(bb_width=kvs['args'].backbone_width,
                           n_tasks=6, n_cls=4, dropout=kvs['args'].dropout_rate,
-                          att_bnorm=kvs['args'].use_bnorm, att_h_size=kvs['args'].attention_hidden)
+                          cls_bnorm=kvs['args'].use_bnorm)
 
     if kvs['gpus'] > 1:
         net = nn.DataParallel(net).to('cuda')
@@ -89,12 +89,11 @@ def epoch_pass(net: nn.Module, loader: DataLoader, criterion: nn.Module,
 
             # forward + backward + optimize
             labels = batch['target'].squeeze().to(device)
-            att_masks = batch['att_masks'].squeeze().to(device)
             inputs = batch['img'].squeeze().to(device)
 
             outputs = net(inputs)
 
-            loss = criterion(outputs, labels, att_masks)
+            loss = criterion(outputs, labels)
 
             if optimizer is not None:
                 loss.backward()
@@ -102,7 +101,7 @@ def epoch_pass(net: nn.Module, loader: DataLoader, criterion: nn.Module,
                 pbar.set_description(f'[{fold_id}] Train:: [{epoch} / {max_epoch}]:: '
                                      f'{running_loss / (i + 1):.3f} | {loss.item():.3f}')
             else:
-                for task_id, (o, _) in enumerate(outputs):
+                for task_id, o in enumerate(outputs):
                     if len(predicts) != len(outputs):
                         predicts.append(o.cpu().numpy().argmax(1).tolist())
                     else:

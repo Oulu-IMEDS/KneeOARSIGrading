@@ -21,6 +21,7 @@ def get_most_meta(meta_path):
                 for bone in ['F', 'T']:
                     features.append(f"V{visit_id}X{leg}OS{bone}{compartment}"),
                 features.append(f"V{visit_id}X{leg}JS{compartment}")
+            features.append(f"V{visit_id}X{leg}KL")
             tmp = most_meta.copy()[features]
             trunc_feature_names = list(map(lambda x: 'XR' + x[4:], features[1:]))
             tmp[trunc_feature_names] = tmp[features[1:]]
