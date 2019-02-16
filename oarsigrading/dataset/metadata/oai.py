@@ -15,7 +15,7 @@ def get_oai_meta(meta_path):
         feats_full = ['ID', # Patient ID
                  'SIDE',            # Side - left or right knee
                  'VISIT',           # Follow-up visit
-                 f'{visit}XRKL',  # Follow-up visit
+                 f'{visit}XRKL',  # KL grade
                  f'{visit}XRSCFL',  # sclerosis (OARSI grades 0- 3) femoral lateral compartment
                  f'{visit}XRSCFM',  # sclerosis (OARSI grades 0- 3) femoral medial compartment
                  f'{visit}XRSCTL',  # sclerosis (OARSI grades 0- 3) tibia lateral compartment

@@ -59,19 +59,12 @@ def gen_attention_masks(lnd_t, lnd_f, imshape, fmap_size=None):
 
 def wrap2solt(inp_data):
     img, entry = inp_data
-    lndm_t = entry.landmarks_T.copy()
-    lndm_f = entry.landmarks_F.copy()
     if entry.SIDE == 1:  # Left
         img = cv2.flip(img, 1)
-        lndm_t[:, 0] = img.shape[1] - lndm_t[:, 0]
-        lndm_f[:, 0] = img.shape[1] - lndm_f[:, 0]
 
-    data_c_content = (img,
-                      sld.KeyPoints(lndm_t, H=img.shape[0], W=img.shape[1]),
-                      sld.KeyPoints(lndm_f, H=img.shape[0], W=img.shape[1]),
-                      entry.XROSTL, entry.XROSFL, entry.XRJSL, entry.XROSTM, entry.XROSFM, entry.XRJSM)
+    data_c_content = (img, entry.XRKL, entry.XROSTL, entry.XROSFL, entry.XRJSL, entry.XROSTM, entry.XROSFM, entry.XRJSM)
 
-    dc = sld.DataContainer(data_c_content, 'IPPLLLLLL')
+    dc = sld.DataContainer(data_c_content, 'ILLLLLLL')
 
     return dc
 
@@ -124,10 +117,10 @@ def normalize_channel_wise(tensor, mean, std):
 
 
 def pack_tensors(res):
-    img_res, lndm_t, lndm_t, ostl, osfl, jsl, ostm, osfm, jsm = res
+    img_res, kl, ostl, osfl, jsl, ostm, osfm, jsm = res
     to_tensor = transforms.ToTensor()
     img_res = to_tensor(img_res)
-    grades = torch.FloatTensor(np.round([ostl, osfl, jsl, ostm, osfm, jsm]).astype(int)).unsqueeze(0)
+    grades = torch.LongTensor(np.round([kl, ostl, osfl, jsl, ostm, osfm, jsm]).astype(int)).unsqueeze(0)
 
     return img_res, grades
 

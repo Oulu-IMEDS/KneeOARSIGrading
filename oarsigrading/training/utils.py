@@ -1,13 +1,10 @@
 
 import gc
-import glob
-import os
 from typing import Tuple, List
 
 import numpy as np
 import torch
 from tensorboardX import SummaryWriter
-from termcolor import colored
 from torch import nn
 from torch import optim
 from torch.nn import DataParallel
@@ -38,8 +35,7 @@ def init_loss() -> nn.Module:
 def init_model() -> Tuple[nn.Module, nn.Module]:
     kvs = GlobalKVS()
 
-    net = OARSIGradingNet(bb_width=kvs['args'].backbone_width,
-                          n_tasks=6, n_cls=4, dropout=kvs['args'].dropout_rate,
+    net = OARSIGradingNet(bb_width=kvs['args'].backbone_width, dropout=kvs['args'].dropout_rate,
                           cls_bnorm=kvs['args'].use_bnorm)
 
     if kvs['gpus'] > 1:
@@ -101,14 +97,17 @@ def epoch_pass(net: nn.Module, loader: DataLoader, criterion: nn.Module,
                 pbar.set_description(f'[{fold_id}] Train:: [{epoch} / {max_epoch}]:: '
                                      f'{running_loss / (i + 1):.3f} | {loss.item():.3f}')
             else:
+                """
                 for task_id, o in enumerate(outputs):
                     if len(predicts) != len(outputs):
                         predicts.append(o.cpu().numpy().argmax(1).tolist())
                     else:
                         predicts[task_id].extend(o.cpu().numpy().argmax(1).tolist())
-
+                """
                 fnames.extend(batch['ID'])
-                gt.append(batch['target'].numpy())
+
+                gt.extend(batch['target'].to('cpu').numpy().squeeze()[:, 0].tolist())
+                predicts.extend(outputs.to('cpu').numpy().argmax(1).squeeze().tolist())
 
                 pbar.set_description(f'[{fold_id}] Validating [{epoch} / {max_epoch}]:')
             if writer is not None and optimizer is not None:
@@ -122,7 +121,8 @@ def epoch_pass(net: nn.Module, loader: DataLoader, criterion: nn.Module,
     if optimizer is not None:
         return running_loss / n_batches
 
-    return running_loss / n_batches, fnames, np.vstack(gt).squeeze(), np.vstack(predicts).T.copy()
+    return running_loss / n_batches, fnames, np.array(gt), np.array(predicts)
+    # np.vstack(gt).squeeze(), np.vstack(predicts).T.copy()
 
 
 def init_scheduler(optimizer: Optimizer, epoch_start: int) -> MultiStepLR:

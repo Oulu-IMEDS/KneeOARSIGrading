@@ -34,7 +34,7 @@ def get_most_meta(meta_path):
             most_meta_all.append(tmp)
 
     most_meta = pd.concat(most_meta_all)
-    most_meta = most_meta[(most_meta[trunc_feature_names] <= 3).all(1)]
+    most_meta = most_meta[(most_meta[trunc_feature_names] <= 4).all(1)]
     most_meta = pd.merge(xray_types, most_meta)
     most_meta = most_meta[most_meta.TYPE == 'PA10']
     most_meta.drop('TYPE', axis=1, inplace=True)

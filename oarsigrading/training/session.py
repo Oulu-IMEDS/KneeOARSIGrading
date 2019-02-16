@@ -73,7 +73,11 @@ def init_metadata():
     else:
         print('==> Loading cached metadata...')
         oai_meta = pd.read_pickle(os.path.join(kvs['args'].snapshots, 'oai_meta.pkl'))
+
         most_meta = pd.read_pickle(os.path.join(kvs['args'].snapshots, 'most_meta.pkl'))
+
+    most_meta = most_meta[(most_meta.XRKL >= 0) & (most_meta.XRKL <= 4)]
+    oai_meta = oai_meta[(oai_meta.XRKL >= 0) & (oai_meta.XRKL <= 4)]
 
     print(colored('==> ', 'green') + 'Images in OAI:', oai_meta.shape[0])
     print(colored('==> ', 'green') + 'Images in MOST:', most_meta.shape[0])
@@ -158,11 +162,10 @@ def init_loaders(x_train, x_val):
     else:
         train_loader = DataLoader(train_dataset, batch_size=kvs['args'].bs,
                                   num_workers=kvs['args'].n_threads,
-                                  drop_last=True, shuffle=True, pin_memory=False,
-                                  worker_init_fn=lambda wid: np.random.seed(np.uint32(torch.initial_seed() + wid)))
+                                  drop_last=True, shuffle=True)
 
     val_loader = DataLoader(val_dataset, batch_size=kvs['args'].val_bs,
-                            num_workers=kvs['args'].n_threads, pin_memory=True)
+                            num_workers=kvs['args'].n_threads)
 
     return train_loader, val_loader
 
