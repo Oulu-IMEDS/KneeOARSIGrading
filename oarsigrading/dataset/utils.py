@@ -23,11 +23,16 @@ def build_dataset_meta(args, img_dir_name='MOST_OAI_FULL_0_2'):
     files_metadata = pd.DataFrame(data={'fname': img_paths, 'ID': patient_ids})
     files_metadata['DS'] = files_metadata.apply(lambda x: 'MOST' if str(x[1]).startswith('M') else 'OAI', 1)
     files_metadata['VISIT'] = files_metadata.apply(lambda x: x[0].split('/')[-1].split('_')[1], 1)  # Follow up
-    files_metadata['SIDE'] = files_metadata.apply(lambda x: 1 if x[0].split('/')[-1].split('_')[-1][:-4] == 'L' else 2,
-                                                  1)
-    files_metadata_oai = files_metadata[files_metadata['DS'] == 'OAI']
-    files_metadata_most = files_metadata[files_metadata['DS'] == 'MOST']
 
+    files_metadata_oai = files_metadata[files_metadata['DS'] == 'OAI']
+    files_metadata_oai['SIDE'] = files_metadata_oai.apply(lambda x: 1 if x[0].
+                                                          split('/')[-1].
+                                                          split('_')[-1][:-4] == 'R' else 2, 1)
+
+    files_metadata_most = files_metadata[files_metadata['DS'] == 'MOST']
+    files_metadata_most['SIDE'] = files_metadata_most.apply(lambda x: 1 if x[0].
+                                                            split('/')[-1].
+                                                            split('_')[-1][:-4] == 'L' else 2, 1)
     oai_meta = get_oai_meta(os.path.join(args.meta_root, 'Data', 'metadata', 'OAI_meta'))
     most_meta = get_most_meta(os.path.join(args.meta_root, 'Data', 'metadata', 'MOST_meta'))
     common_cols = oai_meta.columns.intersection(most_meta.columns)

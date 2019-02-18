@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 from oarsigrading.kvs import GlobalKVS
 from oarsigrading.training.model import MultiTaskClassificationLoss, OARSIGradingNet
+from oarsigrading.training.model_zoo import SeResNet
 
 
 def net_core(net: nn.Module) -> nn.Module:
@@ -29,14 +30,16 @@ def layer_params(net: nn.Module, layer_name: str):
 
 
 def init_loss() -> nn.Module:
-    return MultiTaskClassificationLoss()
+    return nn.CrossEntropyLoss()  # MultiTaskClassificationLoss()
 
 
 def init_model() -> Tuple[nn.Module, nn.Module]:
     kvs = GlobalKVS()
 
-    net = OARSIGradingNet(bb_width=kvs['args'].backbone_width, dropout=kvs['args'].dropout_rate,
-                          cls_bnorm=kvs['args'].use_bnorm)
+    # net = OARSIGradingNet(bb_width=kvs['args'].backbone_width, dropout=kvs['args'].dropout_rate,
+    #                       cls_bnorm=kvs['args'].use_bnorm)
+
+    net = SeResNet(kvs['args'].backbone_width, kvs['args'].dropout_rate, 5)
 
     if kvs['gpus'] > 1:
         net = nn.DataParallel(net).to('cuda')
@@ -84,7 +87,7 @@ def epoch_pass(net: nn.Module, loader: DataLoader, criterion: nn.Module,
                 optimizer.zero_grad()
 
             # forward + backward + optimize
-            labels = batch['target'].squeeze().to(device)
+            labels = batch['target'].squeeze()[:, 0].to(device)
             inputs = batch['img'].squeeze().to(device)
 
             outputs = net(inputs)

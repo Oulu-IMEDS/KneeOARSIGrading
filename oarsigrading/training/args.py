@@ -20,15 +20,15 @@ def parse_args():
     parser.add_argument('--lr_drop_gamma', type=list, default=0.1)
     parser.add_argument('--optimizer', type=str, choices=['sgd', 'adam'], default='adam')
     parser.add_argument('--snapshot_on', type=str, choices=['val_loss', ], default='val_loss')
-    parser.add_argument('--lr', type=float, default=5e-4, help='Learning rate')
-    parser.add_argument('--wd', type=float, default=5e-4, help='Weight decay')
-    parser.add_argument('--bs', type=int, default=64, help='Batch size')
+    parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
+    parser.add_argument('--wd', type=float, default=1e-4, help='Weight decay')
+    parser.add_argument('--bs', type=int, default=32, help='Batch size')
     parser.add_argument('--val_bs', type=int, default=64, help='Validation batch size')
     parser.add_argument('--dropout_rate', type=float, default=0.5, help='Dropout')
     parser.add_argument('--use_bnorm', type=bool, default=False, help='whether to use batchnorm in the classifier')
     parser.add_argument('--snapshot_comparator', type=str, choices=['lt', 'gt'], default='lt')
     parser.add_argument('--keep_snapshots', type=bool, default=False)
-    parser.add_argument('--unfreeze_epoch', type=int, default=2,
+    parser.add_argument('--unfreeze_epoch', type=int, default=1,
                         help='Epoch at which to unfreeze the layers of the backbone')
 
     parser.add_argument('--snapshots', default='/media/lext/FAST/OARSI_grading_project/workdir/oarsi_grades_snapshots/',
