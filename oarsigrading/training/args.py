@@ -11,7 +11,7 @@ def parse_args():
     parser.add_argument('--train_set', type=str, default='oai', choices=['most', 'oai'],
                         help='Dataset to be used for testing.')
 
-    parser.add_argument('--backbone_width', type=int, default=18, help='Width of SE-Resnet')
+    parser.add_argument('--backbone_depth', type=int, default=18, help='Width of SE-Resnet')
     parser.add_argument('--weighted_sampling', type=bool, default=False, help='Whether to weigh samples')
     parser.add_argument('--imsize', type=int, default=700)
     parser.add_argument('--crop_size', type=int, default=650)

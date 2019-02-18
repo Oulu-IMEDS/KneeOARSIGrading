@@ -67,38 +67,35 @@ class MultiTaskHead(nn.Module):
 
 
 class OARSIGradingNet(nn.Module):
-    def __init__(self, bb_width=50, dropout=0.5, cls_bnorm=False):
+    def __init__(self, bb_depth=50, dropout=0.5, cls_bnorm=False):
         super(OARSIGradingNet, self).__init__()
-        backbone = SeResNet(bb_width, 0, 1)
+        backbone = SeResNet(bb_depth, 0, 1)
         self.encoder = backbone.encoder[:-1]
         n_feats = backbone.classifier[-1].in_features
-        #self.classifier = MultiTaskHead(n_feats, (1, 6), (5, 4), cls_bnorm, dropout)
+        self.classifier = MultiTaskHead(n_feats, (1, 6), (5, 4), cls_bnorm, dropout)
         clf_layers = []
         if dropout > 0:
             clf_layers.append(nn.Dropout(dropout))
 
         clf_layers.append(nn.Linear(n_feats, 5))
 
-        self.classifier = nn.Sequential(*clf_layers)
-
     def forward(self, x):
         features = self.encoder(x)
-        features = F.adaptive_avg_pool2d(features, 1).view(x.size(0), -1)
         return self.classifier(features)
 
 
 class MultiTaskClassificationLoss(nn.Module):
     def __init__(self):
         super(MultiTaskClassificationLoss, self).__init__()
-        #self.cls_loss = nn.CrossEntropyLoss()
+        self.cls_loss = nn.CrossEntropyLoss()
 
     def forward(self, pred, target_cls):
-        #loss = 0
-        #n_tasks = 1#len(pred)
+        loss = 0
+        n_tasks = len(pred)
 
-        #for task_id in range(n_tasks):
-            #loss += self.cls_loss(pred[task_id], target_cls[:, task_id])
+        for task_id in range(n_tasks):
+            loss += self.cls_loss(pred[task_id], target_cls[:, task_id])
 
-        #loss /= n_tasks
+        loss /= n_tasks
 
-        return F.cross_entropy(pred, target_cls[:, 0])
+        return loss
