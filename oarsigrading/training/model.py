@@ -13,27 +13,19 @@ class ClassificationHead(nn.Module):
         super(ClassificationHead, self).__init__()
 
         clf_layers = []
-        #if use_bnorm:
-        #    clf_layers.append(nn.BatchNorm1d(n_features))
+        if use_bnorm:
+            clf_layers.append(nn.BatchNorm1d(n_features))
 
         if drop > 0:
             clf_layers.append(nn.Dropout(drop))
 
-        #clf_layers.append(nn.Linear(n_features*2, 512))
-        #clf_layers.append(nn.BatchNorm1d(512))
-        #clf_layers.append(nn.ReLU(True))
-        #if drop > 0:
-        #    clf_layers.append(nn.Dropout(drop))
         clf_layers.append(nn.Linear(n_features, n_cls))
 
         self.classifier = nn.Sequential(*clf_layers)
 
     def forward(self, o):
         avgp = F.adaptive_avg_pool2d(o, 1).view(o.size(0), -1)
-        feats = avgp
-        #mxp = F.adaptive_max_pool2d(o, 1).view(o.size(0), -1)
-        #feats = torch.cat([avgp, mxp], 1)
-        clf_result = self.classifier(feats)
+        clf_result = self.classifier(avgp)
         return clf_result
 
 
