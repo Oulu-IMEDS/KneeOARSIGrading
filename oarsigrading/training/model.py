@@ -1,14 +1,10 @@
 from torch import nn
-import torch
 import torch.nn.functional as F
-from oarsigrading.training.model_zoo import SeResNet
+from oarsigrading.training.model_zoo import ResNet
 from typing import Tuple
 
 
 class ClassificationHead(nn.Module):
-    """Size invariant classifier module with weighted
-    superpixel pooling
-    """
     def __init__(self, n_features, n_cls, use_bnorm=True, drop=0.5):
         super(ClassificationHead, self).__init__()
 
@@ -59,9 +55,9 @@ class MultiTaskHead(nn.Module):
 
 
 class OARSIGradingNet(nn.Module):
-    def __init__(self, bb_depth=50, dropout=0.5, cls_bnorm=False):
+    def __init__(self, bb_depth=50, dropout=0.5, cls_bnorm=False, se=False, dw=False):
         super(OARSIGradingNet, self).__init__()
-        backbone = SeResNet(bb_depth, 0, 1)
+        backbone = ResNet(se, dw, bb_depth, 0, 1)
         self.encoder = backbone.encoder[:-1]
         n_feats = backbone.classifier[-1].in_features
         self.classifier = MultiTaskHead(n_feats, (1, 6), (5, 4), cls_bnorm, dropout)

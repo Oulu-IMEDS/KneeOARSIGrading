@@ -2,14 +2,15 @@ import torch.nn as nn
 import pretrainedmodels
 from termcolor import colored
 
+
 class ViewerFC(nn.Module):
     def forward(self, x):
         return x.view(x.size(0), -1)
 
 
-class SeResNet(nn.Module):
-    def __init__(self, layers, drop, ncls):
-        super(SeResNet, self).__init__()
+class ResNet(nn.Module):
+    def __init__(self, se, dw, layers, drop, ncls):
+        super(ResNet, self).__init__()
         if layers == 18:
             model = pretrainedmodels.__dict__['resnet18'](num_classes=1000, pretrained='imagenet')
             print(colored('====> ', 'green') + 'Pre-trained resnet18 is used as backbone')
@@ -17,8 +18,15 @@ class SeResNet(nn.Module):
             model = pretrainedmodels.__dict__['resnet34'](num_classes=1000, pretrained='imagenet')
             print(colored('====> ', 'green') + 'Pre-trained resnet34 is used as backbone')
         elif layers == 50:
-            model = pretrainedmodels.__dict__['se_resnet50'](num_classes=1000, pretrained='imagenet')
-            print(colored('====> ', 'green') + 'Pre-trained se-resnet50 is used as backbone')
+            if not se and not dw:
+                bb_name = 'resnet50'
+            elif se and not dw:
+                bb_name = 'se_resnet50'
+            else:
+                bb_name = 'se_resnext50_32x4d'
+
+            model = pretrainedmodels.__dict__[bb_name](num_classes=1000, pretrained='imagenet')
+            print(colored('====> ', 'green') + f'Pre-trained {bb_name} is used as backbone')
         elif layers == 101:
             model = pretrainedmodels.__dict__['se_resnet101'](num_classes=1000, pretrained='imagenet')
             print(colored('====> ', 'green') + 'Pre-trained se-resnet101 is used as backbone')

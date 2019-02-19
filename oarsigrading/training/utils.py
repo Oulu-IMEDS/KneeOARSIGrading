@@ -15,7 +15,6 @@ from tqdm import tqdm
 
 from oarsigrading.kvs import GlobalKVS
 from oarsigrading.training.model import MultiTaskClassificationLoss, OARSIGradingNet
-from oarsigrading.training.model_zoo import SeResNet
 
 
 def net_core(net: nn.Module) -> nn.Module:
@@ -37,7 +36,7 @@ def init_model() -> Tuple[nn.Module, nn.Module]:
     kvs = GlobalKVS()
 
     net = OARSIGradingNet(bb_depth=kvs['args'].backbone_depth, dropout=kvs['args'].dropout_rate,
-                          cls_bnorm=kvs['args'].use_bnorm)
+                          cls_bnorm=kvs['args'].use_bnorm, se=kvs['args'].se, dw=kvs['args'].dw)
 
     if kvs['gpus'] > 1:
         net = nn.DataParallel(net).to('cuda')
@@ -106,12 +105,6 @@ def epoch_pass(net: nn.Module, loader: DataLoader, criterion: nn.Module,
                 gt.append(batch['target'].to('cpu').numpy().squeeze())
                 fnames.extend(batch['ID'])
 
-                """
-
-
-                gt.extend(batch['target'].to('cpu').numpy().squeeze()[:, 0].tolist())
-                predicts.extend(outputs.to('cpu').numpy().argmax(1).squeeze().tolist())
-                """
                 pbar.set_description(f'[{fold_id}] Validating [{epoch} / {max_epoch}]:')
             if writer is not None and optimizer is not None:
                 writer.add_scalar('train_logs/loss', loss.item(), kvs['cur_epoch'] * len(loader) + i)

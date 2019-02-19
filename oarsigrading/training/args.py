@@ -11,21 +11,29 @@ def parse_args():
     parser.add_argument('--train_set', type=str, default='oai', choices=['most', 'oai'],
                         help='Dataset to be used for testing.')
 
-    parser.add_argument('--backbone_depth', type=int, default=18, help='Width of SE-Resnet')
-    parser.add_argument('--weighted_sampling', type=bool, default=False, help='Whether to weigh samples')
+    parser.add_argument('--backbone_depth', type=int, default=18, help='Width of Resnet')
+    parser.add_argument('--se', type=bool, default=False, help='Use a SE-ResNet instead of plain resent50')
+    parser.add_argument('--dw', type=bool, default=False, help='Use depth-wise convolutions for SE-Resnet-50')
+    parser.add_argument('--dropout_rate', type=float, default=0.5, help='Dropout')
+    parser.add_argument('--use_bnorm', type=bool, default=False, help='whether to use batchnorm in the classifier')
+
+    parser.add_argument('--weighted_sampling', type=bool, default=False, help='Weighted sampling')
+    parser.add_argument('--sampling_type', type=str, default=['KL', ], choices=['KL', 'OARSI'],
+                        help='Type of sampling: KL or based on OARSI grades')
+
     parser.add_argument('--imsize', type=int, default=700)
     parser.add_argument('--crop_size', type=int, default=650)
     parser.add_argument('--inp_size', type=int, default=300)
-    parser.add_argument('--lr_drop', type=list, default=[10, ])
+
+    parser.add_argument('--lr_drop', nargs='+', type=int, default=[10, ])
     parser.add_argument('--lr_drop_gamma', type=list, default=0.1)
     parser.add_argument('--optimizer', type=str, choices=['sgd', 'adam'], default='adam')
-    parser.add_argument('--snapshot_on', type=str, choices=['val_loss', ], default='val_loss')
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
     parser.add_argument('--wd', type=float, default=1e-4, help='Weight decay')
     parser.add_argument('--bs', type=int, default=32, help='Batch size')
     parser.add_argument('--val_bs', type=int, default=64, help='Validation batch size')
-    parser.add_argument('--dropout_rate', type=float, default=0.5, help='Dropout')
-    parser.add_argument('--use_bnorm', type=bool, default=False, help='whether to use batchnorm in the classifier')
+
+    parser.add_argument('--snapshot_on', type=str, choices=['val_loss', ], default='val_loss')
     parser.add_argument('--snapshot_comparator', type=str, choices=['lt', 'gt'], default='lt')
     parser.add_argument('--keep_snapshots', type=bool, default=False)
     parser.add_argument('--unfreeze_epoch', type=int, default=1,
