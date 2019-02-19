@@ -139,11 +139,13 @@ def init_transforms(mean_vector, std_vector):
     train_trf = [
         wrap2solt,
         slc.Stream([
-            slt.RandomRotate(rotation_range=(-5, 5), interpolation='bilinear', p=0.8),
-            slt.CropTransform(kvs['args'].imsize, crop_mode='c'),
-            slt.CropTransform(kvs['args'].crop_size, crop_mode='r'),  # 130mm (resolution 0.2mm)
-            slt.ResizeTransform(kvs['args'].inp_size),
-            slt.ImageGammaCorrection(p=1, gamma_range=(0.5, 2.5))
+            slt.PadTransform(pad_to=(kvs['args'].imsize, kvs['args'].imsize)),
+            slt.CropTransform(crop_size=(kvs['args'].imsize, kvs['args'].imsize), crop_mode='c'),
+            slt.ResizeTransform((kvs['args'].inp_size, kvs['args'].inp_size)),
+            slt.ImageAdditiveGaussianNoise(p=0.5, gain_range=0.3),
+            slt.RandomRotate(p=1, rotation_range=(-10, 10)),
+            slt.CropTransform(crop_size=(kvs['args'].crop_size, kvs['args'].crop_size), crop_mode='r'),
+            slt.ImageGammaCorrection(p=0.5, gamma_range=(0.5, 1.5)),
         ]),
         unpack_solt_data,
         pack_tensors,
@@ -152,8 +154,10 @@ def init_transforms(mean_vector, std_vector):
     val_trf = [
         wrap2solt,
         slc.Stream([
-            slt.CropTransform(kvs['args'].crop_size, crop_mode='c'),  # 130mm (resolution 0.2mm)
-            slt.ResizeTransform(kvs['args'].inp_size),
+            slt.PadTransform(pad_to=(kvs['args'].imsize, kvs['args'].imsize)),
+            slt.CropTransform(crop_size=(kvs['args'].imsize, kvs['args'].imsize), crop_mode='c'),
+            slt.ResizeTransform((kvs['args'].inp_size, kvs['args'].inp_size)),
+            slt.CropTransform(crop_size=(kvs['args'].crop_size, kvs['args'].crop_size), crop_mode='c'),
         ]),
         unpack_solt_data,
         pack_tensors,

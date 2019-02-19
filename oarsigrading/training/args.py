@@ -22,16 +22,16 @@ def parse_args():
                         help='Type of sampling: KL or based on OARSI grades')
 
     parser.add_argument('--imsize', type=int, default=700)
-    parser.add_argument('--crop_size', type=int, default=650)
-    parser.add_argument('--inp_size', type=int, default=300)
+    parser.add_argument('--inp_size', type=int, default=310)
+    parser.add_argument('--crop_size', type=int, default=300)
 
-    parser.add_argument('--lr_drop', nargs='+', type=int, default=[10, ])
+    parser.add_argument('--lr_drop', nargs='+', type=int, default=[1, 2])
     parser.add_argument('--lr_drop_gamma', type=list, default=0.1)
     parser.add_argument('--optimizer', type=str, choices=['sgd', 'adam'], default='adam')
-    parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
+    parser.add_argument('--lr', type=float, default=1e-2, help='Learning rate')
     parser.add_argument('--wd', type=float, default=1e-4, help='Weight decay')
     parser.add_argument('--bs', type=int, default=32, help='Batch size')
-    parser.add_argument('--val_bs', type=int, default=64, help='Validation batch size')
+    parser.add_argument('--val_bs', type=int, default=128, help='Validation batch size')
 
     parser.add_argument('--snapshot_on', type=str, choices=['val_loss', ], default='val_loss')
     parser.add_argument('--snapshot_comparator', type=str, choices=['lt', 'gt'], default='lt')
