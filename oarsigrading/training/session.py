@@ -17,7 +17,7 @@ from oarsigrading.dataset.utils import build_dataset_meta
 from oarsigrading.kvs import GlobalKVS, git_info
 from oarsigrading.training.args import parse_args
 from oarsigrading.training.dataset import OARSIGradingDataset
-from oarsigrading.dataset.utils import make_weights_for_multilabel, WeightedRandomSampler
+from oarsigrading.dataset.utils import make_weights_for_multiclass, WeightedRandomSampler
 from oarsigrading.training.transforms import init_transforms
 from oarsigrading.training.utils import net_core
 DEBUG = sys.gettrace() is not None
@@ -158,7 +158,13 @@ def init_loaders(x_train, x_val):
 
     if kvs['args'].weighted_sampling:
         print(colored('====> ', 'red') + 'Using weighted sampling')
-        raise NotImplementedError
+        _, weights = make_weights_for_multiclass(x_train.XRKL.values.astype(int))
+        sampler = WeightedRandomSampler(weights, x_train.shape[0], True)
+
+        train_loader = DataLoader(train_dataset, batch_size=kvs['args'].bs,
+                                  num_workers=kvs['args'].n_threads,
+                                  drop_last=True, sampler=sampler)
+
     else:
         train_loader = DataLoader(train_dataset, batch_size=kvs['args'].bs,
                                   num_workers=kvs['args'].n_threads,

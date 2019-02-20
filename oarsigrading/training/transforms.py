@@ -12,51 +12,6 @@ import cv2
 import solt.data as sld
 
 
-def gen_attention_masks(lnd_t, lnd_f, imshape, fmap_size=None):
-    """
-    Generates an attention map for feature maps using landmarks
-
-    """
-    assert len(imshape) == 2
-    assert imshape[0] == imshape[1]
-    if fmap_size is None:
-        fmap_size = imshape[0]
-
-    scaling = fmap_size / imshape[0]
-    imshape = (fmap_size, fmap_size)
-
-    lnd_t = np.round(lnd_t*scaling).astype(int)
-    lnd_f = np.round(lnd_f*scaling).astype(int)
-
-    t_width = lnd_t[-1, 0] - lnd_t[0, 0]
-    pad_x = t_width // 7
-    pad_y = t_width // 10
-
-    mid_point_m = (lnd_t[-1, 1] + lnd_f[-1, 1]) // 2
-    mid_point_l = (lnd_t[0, 1] + lnd_f[0, 1]) // 2
-    compartment_length = int((t_width / 2) * 0.8)
-
-    mask_tl = np.zeros(imshape)
-    mask_tl[lnd_t[0, 1] - pad_y:lnd_t[0, 1] + pad_y, lnd_t[0, 0] - pad_x:lnd_t[0, 0] + pad_x] = 1
-
-    mask_fl = np.zeros(imshape)
-    mask_fl[lnd_f[0, 1] - pad_y * 2:lnd_f[0, 1] + pad_y, lnd_f[0, 0] - pad_x:lnd_f[0, 0] + pad_x] = 1
-
-    mask_tm = np.zeros(imshape)
-    mask_tm[lnd_t[-1, 1] - pad_y:lnd_t[-1, 1] + pad_y, lnd_t[-1, 0] - pad_x:lnd_t[-1, 0] + pad_x] = 1
-
-    mask_fm = np.zeros(imshape)
-    mask_fm[lnd_f[-1, 1] - pad_y * 2:lnd_f[-1, 1] + pad_y, lnd_f[-1, 0] - pad_x:lnd_f[-1, 0] + pad_x] = 1
-
-    mask_jsw_m = np.zeros(imshape)
-    mask_jsw_m[mid_point_m - pad_y:mid_point_m + pad_y, lnd_t[-1, 0] - compartment_length:lnd_t[-1, 0]] = 1
-
-    mask_jsw_l = np.zeros(imshape)
-    mask_jsw_l[mid_point_l - pad_y:mid_point_l + pad_y, lnd_t[0, 0]:lnd_t[0, 0] + compartment_length] = 1
-
-    return mask_tl, mask_fl, mask_jsw_l, mask_tm, mask_fm, mask_jsw_m
-
-
 def wrap2solt(inp_data):
     img, entry = inp_data
     if entry.SIDE == 1:  # Left

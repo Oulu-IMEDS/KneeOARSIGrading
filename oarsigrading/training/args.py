@@ -18,8 +18,6 @@ def parse_args():
     parser.add_argument('--use_bnorm', type=bool, default=False, help='whether to use batchnorm in the classifier')
 
     parser.add_argument('--weighted_sampling', type=bool, default=False, help='Weighted sampling')
-    parser.add_argument('--sampling_type', type=str, default=['KL', ], choices=['KL', 'OARSI'],
-                        help='Type of sampling: KL or based on OARSI grades')
 
     parser.add_argument('--imsize', type=int, default=700)
     parser.add_argument('--inp_size', type=int, default=310)

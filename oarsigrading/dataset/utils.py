@@ -42,14 +42,17 @@ def build_dataset_meta(args, img_dir_name='MOST_OAI_FULL_0_2'):
     return oai_meta, most_meta
 
 
-def make_weights_for_multilabel(weights_set, targets):
-    weights_labels = np.log(weights_set.shape[0] / weights_set.sum(0))
-    weights = np.zeros(targets.shape[0])
+def make_weights_for_multiclass(targets):
+    n_classes = np.unique(targets).shape
+    counts = torch.zeros(n_classes, dtype=torch.double)
 
-    for i in range(targets.shape[0]):
-        weights[i] = weights_labels[np.where(targets[i])[0]].sum()
+    for sample_id in range(targets.shape[0]):
+        cls = targets[sample_id]
+        counts[cls] += 1
 
-    return weights, weights_labels
+    weights = 1 / counts
+
+    return weights, weights[targets]
 
 
 class WeightedRandomSampler(Sampler):
