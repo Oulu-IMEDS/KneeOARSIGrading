@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument('--dw', type=bool, default=False, help='Use depth-wise convolutions for SE-Resnet-50')
     parser.add_argument('--dropout_rate', type=float, default=0.5, help='Dropout')
     parser.add_argument('--use_bnorm', type=bool, default=False, help='whether to use batchnorm in the classifier')
+    parser.add_argument('--use_gwap', type=bool, default=False, help='whether to use task-specific gwap')
 
     parser.add_argument('--weighted_sampling', type=bool, default=False, help='Weighted sampling')
 

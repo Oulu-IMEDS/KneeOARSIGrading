@@ -36,7 +36,8 @@ def init_model() -> Tuple[nn.Module, nn.Module]:
     kvs = GlobalKVS()
 
     net = OARSIGradingNet(bb_depth=kvs['args'].backbone_depth, dropout=kvs['args'].dropout_rate,
-                          cls_bnorm=kvs['args'].use_bnorm, se=kvs['args'].se, dw=kvs['args'].dw)
+                          cls_bnorm=kvs['args'].use_bnorm, se=kvs['args'].se,
+                          dw=kvs['args'].dw, use_gwap=kvs['args'].use_gwap)
 
     if kvs['gpus'] > 1:
         net = nn.DataParallel(net).to('cuda')
