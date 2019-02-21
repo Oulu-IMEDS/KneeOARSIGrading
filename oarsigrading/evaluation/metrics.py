@@ -4,25 +4,36 @@ import os
 from oarsigrading.kvs import GlobalKVS
 
 
+def compute_metrics(val_pred, val_gt):
+    kappas = []
+    for task_id in range(val_gt.shape[1]):
+        kappas.append(cohen_kappa_score(val_gt[:, task_id], val_pred[:, task_id], weights='quadratic'))
+
+    kappa_res = {'kappa_kl': kappas[0],
+                 'kappa_ostl': kappas[1],
+                 'kappa_osfl': kappas[2],
+                 'kappa_jsl': kappas[3],
+                 'kappa_ostm': kappas[4],
+                 'kappa_osfm': kappas[5],
+                 'kappa_jsm': kappas[6]
+                 }
+
+    print(colored('==> ', 'green') + f' Kappas:')
+    for k in kappa_res:
+        print(colored('==> ', 'red') + f'{k} : {kappa_res[k]:.4f}')
+
+    return kappa_res
+
+
 def log_metrics(boardlogger, train_loss, val_loss, val_pred, val_gt):
     kvs = GlobalKVS()
     res = {
         'epoch': kvs['cur_epoch'],
         'val_loss': val_loss
     }
+    print(colored('==> ', 'green') + f'Train loss: {train_loss:.4f} / Val loss: {val_loss:.4f}')
 
-    kappas = []
-    for task_id in range(val_gt.shape[1]):
-        kappas.append(cohen_kappa_score(val_gt[:, task_id], val_pred[:, task_id], weights='quadratic'))
-
-    res.update({'kappa_kl': kappas[0],
-                'kappa_ostl': kappas[1],
-                'kappa_osfl': kappas[2],
-                'kappa_jsl': kappas[3],
-                'kappa_ostm': kappas[4],
-                'kappa_osfm': kappas[5],
-                'kappa_jsm': kappas[6]}
-               )
+    res.update(compute_metrics(val_pred, val_gt))
 
     boardlogger.add_scalars('Losses', {'train': train_loss, 'val': val_loss}, kvs['cur_epoch'])
     boardlogger.add_scalars('Metrics', {metric: res[metric] for metric in res if metric.startswith('kappa')},
@@ -33,9 +44,5 @@ def log_metrics(boardlogger, train_loss, val_loss, val_pred, val_gt):
                                                     'val_loss': val_loss})
 
     kvs.update(f'val_metrics_fold_[{kvs["cur_fold"]}]', res)
-
-    print(colored('==> ', 'green') + f'Train loss: {train_loss:.4f} / Val loss: {val_loss:.4f}')
-
-    print(colored('==> ', 'green') + f' Kappas: {kappas}')
 
     kvs.save_pkl(os.path.join(kvs['args'].snapshots, kvs['snapshot_name'], 'session.pkl'))

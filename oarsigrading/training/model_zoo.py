@@ -8,34 +8,35 @@ class ViewerFC(nn.Module):
         return x.view(x.size(0), -1)
 
 
+def backbone_name(layers, se, dw):
+    if layers == 18:
+        bb_name = 'resnet18'
+    elif layers == 34:
+        bb_name = 'resnet34'
+    elif layers == 50:
+        if not se and not dw:
+            bb_name = 'resnet50'
+        elif se and not dw:
+            bb_name = 'se_resnet50'
+        else:
+
+            bb_name = 'se_resnext50_32x4d'
+    elif layers == 101:
+        bb_name = 'se_resnet101'
+    elif layers == 152:
+        bb_name = 'se_resnet152'
+    else:
+        raise NotImplementedError
+    return bb_name
+
+
 class ResNet(nn.Module):
     def __init__(self, se, dw, layers, drop, ncls):
         super(ResNet, self).__init__()
-        if layers == 18:
-            model = pretrainedmodels.__dict__['resnet18'](num_classes=1000, pretrained='imagenet')
-            print(colored('====> ', 'green') + 'Pre-trained resnet18 is used as backbone')
-        elif layers == 34:
-            model = pretrainedmodels.__dict__['resnet34'](num_classes=1000, pretrained='imagenet')
-            print(colored('====> ', 'green') + 'Pre-trained resnet34 is used as backbone')
-        elif layers == 50:
-            if not se and not dw:
-                bb_name = 'resnet50'
-            elif se and not dw:
-                bb_name = 'se_resnet50'
-            else:
-                bb_name = 'se_resnext50_32x4d'
 
-            model = pretrainedmodels.__dict__[bb_name](num_classes=1000, pretrained='imagenet')
-            print(colored('====> ', 'green') + f'Pre-trained {bb_name} is used as backbone')
-        elif layers == 101:
-            model = pretrainedmodels.__dict__['se_resnet101'](num_classes=1000, pretrained='imagenet')
-            print(colored('====> ', 'green') + 'Pre-trained se-resnet101 is used as backbone')
-        elif layers == 152:
-            model = pretrainedmodels.__dict__['se_resnet152'](num_classes=1000, pretrained='imagenet')
-            print(colored('====> ', 'green') + 'Pre-trained se-resnet152 is used as backbone')
-        else:
-            raise NotImplementedError
-
+        bb_name = backbone_name(layers, se, dw)
+        print(colored('====> ', 'green') + f'Pre-trained {bb_name} is used as backbone')
+        model = pretrainedmodels.__dict__[bb_name](num_classes=1000, pretrained='imagenet')
         self.encoder = list(model.children())[:-2]
 
         self.encoder.append(nn.AdaptiveAvgPool2d(1))
