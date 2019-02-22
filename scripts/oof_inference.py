@@ -61,7 +61,8 @@ if __name__ == "__main__":
         snapshot_name = snapshot_name[0]
         net = OARSIGradingNet(bb_depth=layers, dropout=session_backup['args'][0].dropout_rate,
                               cls_bnorm=session_backup['args'][0].use_bnorm, se=se, dw=dw,
-                              use_gwap=session_backup['args'][0].use_gwap)
+                              use_gwap=getattr(session_backup['args'][0], 'use_gwap', False),
+                              use_gwap_hidden=getattr(session_backup['args'][0], 'use_gwap_hidden', False))
 
         net.load_state_dict(torch.load(snapshot_name)['net'])
 
@@ -99,6 +100,13 @@ if __name__ == "__main__":
                         predicts=predicts)
 
     metrics_dict = metrics.compute_metrics(gt, predicts)
+    model_info = dict()
+    model_info['backbone'] = bb_name
+    model_info['gwap'] = getattr(session_backup['args'][0], 'use_gwap', False)
+    model_info['gwap_hidden'] = getattr(session_backup['args'][0], 'use_gwap_hidden', False)
+    model_info['weighted_sampling'] = getattr(session_backup['args'][0], 'weighted_sampling', False)
+
+    metrics_dict['model'] = model_info
 
     with open(os.path.join(save_fld, 'metrics.json'), 'w') as f:
         json.dump(metrics_dict, f)
