@@ -60,7 +60,8 @@ if __name__ == "__main__":
             continue
         snapshot_name = snapshot_name[0]
         net = OARSIGradingNet(bb_depth=layers, dropout=session_backup['args'][0].dropout_rate,
-                              cls_bnorm=session_backup['args'][0].use_bnorm, se=se, dw=dw)
+                              cls_bnorm=session_backup['args'][0].use_bnorm, se=se, dw=dw,
+                              use_gwap=session_backup['args'][0].use_gwap)
 
         net.load_state_dict(torch.load(snapshot_name)['net'])
 
