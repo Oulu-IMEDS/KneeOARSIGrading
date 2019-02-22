@@ -51,6 +51,12 @@ do
     python oof_inference.py --snapshots ${SNAPSHOTS_DIR} \
         --dataset_root ${DATA_DIR} \
         --meta_root ${META_DIR}\
-        --snapshot ${SNP_NAME}
+        --snapshot ${SNP_NAME} \
+
+    python oof_inference.py --snapshots ${SNAPSHOTS_DIR} \
+        --dataset_root ${DATA_DIR} \
+        --meta_root ${META_DIR}\
+        --snapshot ${SNP_NAME} \
+        --tta True
 done
 

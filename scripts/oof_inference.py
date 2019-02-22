@@ -5,21 +5,24 @@ import argparse
 import os
 import glob
 import json
+from functools import partial
+import numpy as np
 
 from termcolor import colored
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SequentialSampler
+from torchvision.transforms import Compose
 from tqdm import tqdm
 
 
 from oarsigrading.kvs import GlobalKVS
 from oarsigrading.training.dataset import OARSIGradingDataset
-import numpy as np
 from oarsigrading.evaluation import metrics
-
 from oarsigrading.training.model_zoo import backbone_name
 from oarsigrading.training.model import OARSIGradingNet
+import oarsigrading.evaluation.tta as tta
+from oarsigrading.training.transforms import apply_by_index
 
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
@@ -31,6 +34,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_root', default='')
     parser.add_argument('--meta_root', default='')
+    parser.add_argument('--tta', type=bool, default=False)
     parser.add_argument('--bs', type=int, default=32)
     parser.add_argument('--n_threads', type=int, default=12)
     parser.add_argument('--snapshots_root', default='')
@@ -73,19 +77,24 @@ if __name__ == "__main__":
         _, val_index = session_backup['cv_split_all_folds'][0][fold_id]
         val_set = metadata.iloc[val_index]
 
-        val_dataset = OARSIGradingDataset(val_set, session_backup['val_trf'][0])
+        if args.tta:
+            print(colored('====> ', 'green') + f'5-crop TTA will be used')
+            tta_cropper = partial(apply_by_index,
+                                  transform=partial(tta.five_crop, size=session_backup['args'][0].crop_size),
+                                  idx=0)
+
+            test_trf = Compose([session_backup['val_trf'][0], tta_cropper])
+        else:
+            test_trf = session_backup['val_trf'][0]
+
+        val_dataset = OARSIGradingDataset(val_set, test_trf)
         val_loader = DataLoader(val_dataset, batch_size=args.bs,
                                 num_workers=args.n_threads,
                                 sampler=SequentialSampler(val_dataset))
 
         with torch.no_grad():
             for batch in tqdm(val_loader, total=len(val_loader), desc=f'Predicting fold {fold_id}:'):
-                inputs = batch['img'].squeeze().to('cuda')
-                outputs = net(inputs)
-                tmp_preds = np.zeros(batch['target'].squeeze().size(), dtype=np.int64)
-                for task_id, o in enumerate(outputs):
-                    tmp_preds[:, task_id] = outputs[task_id].to('cpu').squeeze().argmax(1)
-
+                tmp_preds = tta.eval_batch(net, batch['img'], batch['target'])
                 predicts.append(tmp_preds)
                 gt.append(batch['target'].to('cpu').numpy().squeeze())
                 fnames.extend(batch['ID'])
@@ -94,7 +103,7 @@ if __name__ == "__main__":
 
     save_fld = os.path.join(args.snapshots_root, args.snapshot, 'oof_inference')
     os.makedirs(save_fld, exist_ok=True)
-    np.savez_compressed(os.path.join(save_fld, 'results.npz'),
+    np.savez_compressed(os.path.join(save_fld, 'results_{"TTA" if args.tta else "plain"}.npz'),
                         fnames=fnames,
                         gt=gt,
                         predicts=predicts)
@@ -108,5 +117,5 @@ if __name__ == "__main__":
 
     metrics_dict['model'] = model_info
 
-    with open(os.path.join(save_fld, 'metrics.json'), 'w') as f:
+    with open(os.path.join(save_fld, f'metrics_{"TTA" if args.tta else "plain"}.json'), 'w') as f:
         json.dump(metrics_dict, f)

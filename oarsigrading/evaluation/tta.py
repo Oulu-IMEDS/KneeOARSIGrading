@@ -1,4 +1,6 @@
 import torch
+import numpy as np
+import torch.nn.functional as F
 
 
 def five_crop(img, size):
@@ -19,30 +21,24 @@ def five_crop(img, size):
     return torch.stack((c_cr, ul_cr, ur_cr, bl_cr, br_cr))
 
 
-def eval_batch(net, sample, return_features=False):
+def eval_batch(net, inputs, target):
     """Evaluates TTA for a single batch"""
-    with torch.no_grad():
-        inputs = sample['img'].squeeze().to("cuda")
-        if len(inputs.size()) == 5:
-            bs, n_crops, c, h, w = inputs.size()
-            out = net(inputs.view(-1, c, h, w), return_features)
-            if return_features:
-                out, features = out
 
-            # TODO: refactor for this task
-            raise NotImplementedError
-            # out = torch.sigmoid(out)
-            # out = out.view(bs, n_crops, out.size()[-1]).mean(1)
+    if inputs.device != 'cuda':
+        inputs = inputs.to('cuda')
 
-            # Averaging the features across TTA dimension
-            #if return_features:
-            #    features = features.view(bs, n_crops, features.size()[-1]).mean(1)
-        else:
-            out = net(inputs, return_features)
-            if return_features:
-                out, features = out
-            out = torch.sigmoid(out)
+    inputs = inputs.squeeze()
+    target = target.squeeze()
 
-    if return_features:
-        return out, features
-    return out
+    if len(inputs.size()) == 5:
+        bs, n_crops, c, h, w = inputs.size()
+        outputs = net(inputs.view(-1, c, h, w))
+        outputs = [F.softmax(o, 1).view(bs, n_crops, o.size()[-1]).mean(1) for o in outputs]
+    else:
+        outputs = net(inputs)
+
+    tmp_preds = np.zeros(target.size(), dtype=np.int64)
+    for task_id, o in enumerate(outputs):
+        tmp_preds[:, task_id] = outputs[task_id].to('cpu').squeeze().argmax(1)
+
+    return tmp_preds
