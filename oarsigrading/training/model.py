@@ -24,7 +24,7 @@ class GlobalWeightedAveragePooling(nn.Module):
                 nn.Conv2d(n_feats, 1, kernel_size=1, bias=True)
             )
         else:
-            nn.Conv2d(n_feats, 1, kernel_size=1, bias=True)
+            self.conv = nn.Conv2d(n_feats, 1, kernel_size=1, bias=True)
 
     def fscore(self, x: torch.Tensor):
         m = self.conv(x)
