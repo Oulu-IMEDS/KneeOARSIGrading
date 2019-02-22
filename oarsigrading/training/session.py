@@ -157,8 +157,15 @@ def init_loaders(x_train, x_val):
     train_dataset, val_dataset = init_datasets(x_train, x_val)
 
     if kvs['args'].weighted_sampling:
-        print(colored('====> ', 'red') + 'Using weighted sampling')
-        _, weights = make_weights_for_multiclass(x_train.XRKL.values.astype(int))
+        if not kvs['args'].mtw:
+            print(colored('====> ', 'red') + 'Using weighted sampling (KL)')
+            _, weights = make_weights_for_multiclass(x_train.XRKL.values.astype(int))
+        else:
+            print(colored('====> ', 'red') + 'Using weighted sampling (MTW)')
+            cols = ['XROSTL', 'XROSFL', 'XRJSL', 'XROSTM', 'XROSFM', 'XRJSM']
+            weights = torch.stack([make_weights_for_multiclass(x_train[col].values.astype(int))[1]
+                                   for col in cols], 1).max(1)[0]
+
         sampler = WeightedRandomSampler(weights, x_train.shape[0], True)
 
         train_loader = DataLoader(train_dataset, batch_size=kvs['args'].bs,

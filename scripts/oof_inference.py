@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     save_fld = os.path.join(args.snapshots_root, args.snapshot, 'oof_inference')
     os.makedirs(save_fld, exist_ok=True)
-    np.savez_compressed(os.path.join(save_fld, 'results_{"TTA" if args.tta else "plain"}.npz'),
+    np.savez_compressed(os.path.join(save_fld, f'results_{"TTA" if args.tta else "plain"}.npz'),
                         fnames=fnames,
                         gt=gt,
                         predicts=predicts)

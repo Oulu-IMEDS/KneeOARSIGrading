@@ -20,6 +20,7 @@ def parse_args():
     parser.add_argument('--use_gwap_hidden', type=bool, default=False, help='whether to use hidden layer for pooling')
 
     parser.add_argument('--weighted_sampling', type=bool, default=False, help='Weighted sampling')
+    parser.add_argument('--mtw', type=bool, default=False, help='Maximum task-weighing')
 
     parser.add_argument('--imsize', type=int, default=700)
     parser.add_argument('--inp_size', type=int, default=310)

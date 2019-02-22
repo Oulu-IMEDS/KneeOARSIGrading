@@ -46,17 +46,33 @@ cd scripts
 #python train.py --backbone_depth 50 --se True --dw True  --weighted_sampling True --snapshots ${SNAPSHOTS_DIR}\
 # --dataset_root ${DATA_DIR} --meta_root ${META_DIR}
 
+
+# -------------------------------------------------------------- #
+# --------------------Maximum task-weighing---------------------- #
+# -------------------------------------------------------------- #
+
+python train.py --backbone_depth 18 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+ --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
+
+python train.py --backbone_depth 34 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+ --dataset_root ${DATA_DIR} --meta_root ${META_DIR}  --mtw True
+
+python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+ --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
+
+python train.py --backbone_depth 50 --se True  --weighted_sampling True --snapshots ${SNAPSHOTS_DIR}\
+ --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
+
+python train.py --backbone_depth 50 --se True --dw True  --weighted_sampling True --snapshots ${SNAPSHOTS_DIR}\
+ --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
+
+
+
 for SNP_NAME in $(ls ${SNAPSHOTS_DIR} | grep ${SNP_PREF});
 do
     python oof_inference.py --snapshots ${SNAPSHOTS_DIR} \
         --dataset_root ${DATA_DIR} \
         --meta_root ${META_DIR}\
-        --snapshot ${SNP_NAME} \
-
-    python oof_inference.py --snapshots ${SNAPSHOTS_DIR} \
-        --dataset_root ${DATA_DIR} \
-        --meta_root ${META_DIR}\
-        --snapshot ${SNP_NAME} \
-        --tta True
+        --snapshot ${SNP_NAME}
 done
 
