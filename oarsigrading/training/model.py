@@ -21,6 +21,7 @@ class GlobalWeightedAveragePooling(nn.Module):
                 nn.Conv2d(n_feats, n_feats, kernel_size=3, padding=1, stride=1),
                 nn.BatchNorm2d(n_feats),
                 nn.ReLU(True),
+                nn.Dropout2d(0.5),
                 nn.Conv2d(n_feats, 1, kernel_size=1, bias=True)
             )
         else:
@@ -114,6 +115,8 @@ class OARSIGradingNet(nn.Module):
         n_feats = backbone.classifier[-1].in_features
         if use_gwap:
             print(colored('====> ', 'green') + f'Task-specific weighted pooling will be used')
+            if use_gwap_hidden:
+                print(colored('====> ', 'green') + f'GWAP will have a hidden layer')
         self.classifier = MultiTaskHead(n_feats, (1, 6), (5, 4), cls_bnorm, dropout, use_gwap, use_gwap_hidden)
         clf_layers = []
         if dropout > 0:
