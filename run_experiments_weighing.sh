@@ -51,20 +51,20 @@ cd scripts
 # --------------------Maximum task-weighing---------------------- #
 # -------------------------------------------------------------- #
 
-python train.py --backbone_depth 18 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
- --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
+#python train.py --backbone_depth 18 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
 
-python train.py --backbone_depth 34 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
- --dataset_root ${DATA_DIR} --meta_root ${META_DIR}  --mtw True
+#python train.py --backbone_depth 34 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR}  --mtw True
 
-python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
- --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
+#python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
 
-python train.py --backbone_depth 50 --se True  --weighted_sampling True --snapshots ${SNAPSHOTS_DIR}\
- --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
+#python train.py --backbone_depth 50 --se True  --weighted_sampling True --snapshots ${SNAPSHOTS_DIR}\
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
 
-python train.py --backbone_depth 50 --se True --dw True  --weighted_sampling True --snapshots ${SNAPSHOTS_DIR}\
- --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
+#python train.py --backbone_depth 50 --se True --dw True  --weighted_sampling True --snapshots ${SNAPSHOTS_DIR}\
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --mtw True
 
 
 
