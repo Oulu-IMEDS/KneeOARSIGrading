@@ -7,9 +7,9 @@ SNP_PREF=2019_03
 
 cd scripts
 
-python train.py --siamese True --unfreeze_epoch 2 --lr 1e-4 --lr_drop 30 --dropout_rate 0.2 \
-                --val_bs 32 --siamese_bb resnet-18 --snapshots ${SNAPSHOTS_DIR} \
-                --dataset_root ${DATA_DIR} --meta_root ${META_DIR}
+#python train.py --siamese True --unfreeze_epoch 2 --lr 1e-4 --lr_drop 30 --dropout_rate 0.2 \
+#                --val_bs 32 --siamese_bb resnet-18 --snapshots ${SNAPSHOTS_DIR} \
+#                --dataset_root ${DATA_DIR} --meta_root ${META_DIR}
 
 
 

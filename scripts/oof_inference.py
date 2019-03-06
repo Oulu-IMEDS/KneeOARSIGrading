@@ -20,7 +20,7 @@ from oarsigrading.kvs import GlobalKVS
 from oarsigrading.training.dataset import OARSIGradingDataset
 from oarsigrading.evaluation import metrics
 from oarsigrading.training.model_zoo import backbone_name
-from oarsigrading.training.model import OARSIGradingNet
+from oarsigrading.training.model import OARSIGradingNet, OARSIGradingNetSiamese
 import oarsigrading.evaluation.tta as tta
 from oarsigrading.training.transforms import apply_by_index
 
@@ -63,10 +63,14 @@ if __name__ == "__main__":
         if len(snapshot_name) == 0:
             continue
         snapshot_name = snapshot_name[0]
-        net = OARSIGradingNet(bb_depth=layers, dropout=session_backup['args'][0].dropout_rate,
-                              cls_bnorm=session_backup['args'][0].use_bnorm, se=se, dw=dw,
-                              use_gwap=getattr(session_backup['args'][0], 'use_gwap', False),
-                              use_gwap_hidden=getattr(session_backup['args'][0], 'use_gwap_hidden', False))
+        if session_backup['args'][0].siamese:
+            net = OARSIGradingNetSiamese(backbone=session_backup['args'][0].siamese_bb,
+                                         dropout=session_backup['args'][0].dropout_rate)
+        else:
+            net = OARSIGradingNet(bb_depth=layers, dropout=session_backup['args'][0].dropout_rate,
+                                  cls_bnorm=session_backup['args'][0].use_bnorm, se=se, dw=dw,
+                                  use_gwap=getattr(session_backup['args'][0], 'use_gwap', False),
+                                  use_gwap_hidden=getattr(session_backup['args'][0], 'use_gwap_hidden', False))
 
         net.load_state_dict(torch.load(snapshot_name)['net'])
 
@@ -94,7 +98,12 @@ if __name__ == "__main__":
 
         with torch.no_grad():
             for batch in tqdm(val_loader, total=len(val_loader), desc=f'Predicting fold {fold_id}:'):
-                tmp_preds = tta.eval_batch(net, batch['img'], batch['target'])
+                if session_backup['args'][0].siamese:
+                    inp_med = batch['img_med']
+                    inp_lat = batch['img_lat']
+                    tmp_preds = tta.eval_batch(net, (inp_med, inp_lat), batch['target'])
+                else:
+                    tmp_preds = tta.eval_batch(net, batch['img'], batch['target'])
                 predicts.append(tmp_preds)
                 gt.append(batch['target'].to('cpu').numpy().squeeze())
                 fnames.extend(batch['ID'])

@@ -24,18 +24,38 @@ def five_crop(img, size):
 def eval_batch(net, inputs, target):
     """Evaluates TTA for a single batch"""
 
-    if inputs.device != 'cuda':
-        inputs = inputs.to('cuda')
+    inp_lat = None
+    inp_med = None
+    if not isinstance(inputs, tuple):
+        if inputs.device != 'cuda':
+            inputs = inputs.to('cuda')
+            inputs = inputs.squeeze()
+    else:
+        inp_med, inp_lat = inputs
+        if inp_med.device != 'cuda':
+            inp_med = inp_med.to('cuda')
 
-    inputs = inputs.squeeze()
+        if inp_lat.device != 'cuda':
+            inp_lat = inp_lat.to('cuda')
+
     target = target.squeeze()
 
-    if len(inputs.size()) == 5:
-        bs, n_crops, c, h, w = inputs.size()
-        outputs = net(inputs.view(-1, c, h, w))
-        outputs = [F.softmax(o, 1).view(bs, n_crops, o.size()[-1]).mean(1) for o in outputs]
+    if not isinstance(inputs, tuple):
+        if len(inputs.size()) == 5:
+            bs, n_crops, c, h, w = inputs.size()
+            outputs = net(inputs.view(-1, c, h, w))
+            outputs = [F.softmax(o, 1).view(bs, n_crops, o.size()[-1]).mean(1) for o in outputs]
+        else:
+            outputs = net(inputs)
     else:
-        outputs = net(inputs)
+        if len(inp_med.size()) == 5:
+            bs, n_crops, c_m, h_m, w_m = inp_med.size()
+            _, _, c_l, h_l, w_l = inp_lat.size()
+            outputs = net(inp_med.view(-1, c_m, h_m, w_m), inp_lat.view(-1, c_m, h_m, w_m))
+
+            outputs = [F.softmax(o, 1).view(bs, n_crops, o.size()[-1]).mean(1) for o in outputs]
+        else:
+            outputs = net(inp_med, inp_lat)
 
     tmp_preds = np.zeros(target.size(), dtype=np.int64)
     for task_id, o in enumerate(outputs):
