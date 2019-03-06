@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from oarsigrading.kvs import GlobalKVS
-from oarsigrading.training.model import MultiTaskClassificationLoss, OARSIGradingNet
+from oarsigrading.training.model import MultiTaskClassificationLoss, OARSIGradingNet, OARSIGradingNetSiamese
 
 
 def net_core(net: nn.Module) -> nn.Module:
@@ -35,10 +35,13 @@ def init_loss() -> nn.Module:
 def init_model() -> Tuple[nn.Module, nn.Module]:
     kvs = GlobalKVS()
 
-    net = OARSIGradingNet(bb_depth=kvs['args'].backbone_depth, dropout=kvs['args'].dropout_rate,
-                          cls_bnorm=kvs['args'].use_bnorm, se=kvs['args'].se,
-                          dw=kvs['args'].dw, use_gwap=kvs['args'].use_gwap,
-                          use_gwap_hidden=kvs['args'].use_gwap_hidden)
+    if kvs['args'].siamese:
+        net = OARSIGradingNetSiamese(backbone=kvs['args'].siamese_bb, dropout=kvs['args'].dropout_rate)
+    else:
+        net = OARSIGradingNet(bb_depth=kvs['args'].backbone_depth, dropout=kvs['args'].dropout_rate,
+                              cls_bnorm=kvs['args'].use_bnorm, se=kvs['args'].se,
+                              dw=kvs['args'].dw, use_gwap=kvs['args'].use_gwap,
+                              use_gwap_hidden=kvs['args'].use_gwap_hidden)
 
     if kvs['gpus'] > 1:
         net = nn.DataParallel(net).to('cuda')
@@ -87,9 +90,13 @@ def epoch_pass(net: nn.Module, loader: DataLoader, criterion: nn.Module,
 
             # forward + backward + optimize
             labels = batch['target'].squeeze().to(device)
-            inputs = batch['img'].squeeze().to(device)
-
-            outputs = net(inputs)
+            if kvs['args'].siamese:
+                inp_med = batch['img_med'].squeeze().to(device)
+                inp_lat = batch['img_lat'].squeeze().to(device)
+                outputs = net(inp_med, inp_lat)
+            else:
+                inputs = batch['img'].squeeze().to(device)
+                outputs = net(inputs)
 
             loss = criterion(outputs, labels)
 

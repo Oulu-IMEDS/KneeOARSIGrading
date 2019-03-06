@@ -21,25 +21,25 @@ cd scripts
 #python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
 # --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --se True
 
-python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
- --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --se True --dw True
+#python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --se True --dw True
 
 # GWAP hidden used
 
-python train.py --backbone_depth 18 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
- --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --use_gwap_hidden True
+#python train.py --backbone_depth 18 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --use_gwap_hidden True
 
-python train.py --backbone_depth 34 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
- --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --use_gwap_hidden True
+#python train.py --backbone_depth 34 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --use_gwap_hidden True
 
-python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
- --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --use_gwap_hidden True
+#python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --use_gwap_hidden True
 
-python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
- --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --se True --use_gwap_hidden True
+#python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --se True --use_gwap_hidden True
 
-python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
- --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --se True --dw True --use_gwap_hidden True
+#python train.py --backbone_depth 50 --weighted_sampling True --snapshots ${SNAPSHOTS_DIR} \
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --use_gwap True --se True --dw True --use_gwap_hidden True
 
 
 

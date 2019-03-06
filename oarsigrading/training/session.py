@@ -128,7 +128,11 @@ def init_mean_std(snapshots_dir, dataset, batch_size, n_threads):
         std_vector = None
         print(colored('==> ', 'green') + 'Calculating mean and std')
         for batch in tqdm(tmp_loader, total=len(tmp_loader)):
-            imgs = batch['img']
+            if kvs['args'].siamese:
+                imgs = torch.cat((batch['img_med'], batch['img_lat']))
+            else:
+                imgs = batch['img']
+
             if mean_vector is None:
                 mean_vector = np.zeros(imgs.size(1))
                 std_vector = np.zeros(imgs.size(1))

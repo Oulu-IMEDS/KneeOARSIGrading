@@ -12,8 +12,10 @@ class OARSIGradingDataset(data.Dataset):
     def __getitem__(self, idx):
         entry = self.meta.iloc[idx]
         img = read_gs(entry.fname)
-        img_res, kl_oarsi_grades = self.trf((img, entry))
-        return {'img': img_res, 'target': kl_oarsi_grades, 'ID': entry.ID,
+        img_res, img_med, img_lat, kl_oarsi_grades = self.trf((img, entry))
+
+        return {'img': img_res, 'img_med': img_med, 'img_lat': img_lat,
+                'target': kl_oarsi_grades, 'ID': entry.ID,
                 'SIDE': entry.SIDE, 'VISIT': entry.VISIT}
 
     def __len__(self):

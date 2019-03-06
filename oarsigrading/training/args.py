@@ -11,6 +11,11 @@ def parse_args():
     parser.add_argument('--train_set', type=str, default='oai', choices=['most', 'oai'],
                         help='Dataset to be used for testing.')
 
+    parser.add_argument('--siamese', type=bool, default=False, help='Whether to use Siamese model')
+    parser.add_argument('--siamese_bb', type=str, choices=['lext', 'resnet-18', 'se_resnext50_32x4d'],
+                        default='lext',
+                        help='Backbone for Siamese model')
+
     parser.add_argument('--backbone_depth', type=int, default=18, help='Width of Resnet')
     parser.add_argument('--se', type=bool, default=False, help='Use a SE-ResNet instead of plain resent50')
     parser.add_argument('--dw', type=bool, default=False, help='Use depth-wise convolutions for SE-Resnet-50')

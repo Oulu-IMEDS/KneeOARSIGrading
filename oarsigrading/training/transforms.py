@@ -74,10 +74,19 @@ def normalize_channel_wise(tensor, mean, std):
 def pack_tensors(res):
     img_res, kl, ostl, osfl, jsl, ostm, osfm, jsm = res
     to_tensor = transforms.ToTensor()
+
+    h, w = img_res.shape[0], img_res.shape[1]
+    img = img_res[(h // 2 - 300):(h // 2 + 300), (w // 2 - 300):(w // 2 + 300)]
+    h, w = img.shape[0], img.shape[1]
+    img_lat, img_med = img[h // 3:2 * h // 3, :w // 2], img[h // 3:2 * h // 3, w // 2:]
+    img_lat = to_tensor(cv2.flip(img_lat, 1))
+    img_med = to_tensor(img_med)
+
     img_res = to_tensor(img_res)
+
     grades = torch.LongTensor(np.round([kl, ostl, osfl, jsl, ostm, osfm, jsm]).astype(int)).unsqueeze(0)
 
-    return img_res, grades
+    return img_res, img_med, img_lat, grades
 
 
 def init_transforms(mean_vector, std_vector):
@@ -87,32 +96,46 @@ def init_transforms(mean_vector, std_vector):
         mean_vector = torch.from_numpy(mean_vector).float()
         std_vector = torch.from_numpy(std_vector).float()
         norm_trf = partial(normalize_channel_wise, mean=mean_vector, std=std_vector)
-        norm_trf = partial(apply_by_index, transform=norm_trf, idx=0)
+        norm_trf = partial(apply_by_index, transform=norm_trf, idx=[0, 1, 2])
     else:
         norm_trf = None
+
+    if kvs['args'].siamese:
+        resize_train = slc.Stream()
+        crop_train = slt.CropTransform(crop_size=(kvs['args'].imsize, kvs['args'].imsize), crop_mode='c')
+    else:
+        resize_train = slt.ResizeTransform((kvs['args'].inp_size, kvs['args'].inp_size))
+        crop_train = slt.CropTransform(crop_size=(kvs['args'].crop_size, kvs['args'].crop_size), crop_mode='r')
 
     train_trf = [
         wrap2solt,
         slc.Stream([
             slt.PadTransform(pad_to=(kvs['args'].imsize, kvs['args'].imsize)),
             slt.CropTransform(crop_size=(kvs['args'].imsize, kvs['args'].imsize), crop_mode='c'),
-            slt.ResizeTransform((kvs['args'].inp_size, kvs['args'].inp_size)),
+            resize_train,
             slt.ImageAdditiveGaussianNoise(p=0.5, gain_range=0.3),
             slt.RandomRotate(p=1, rotation_range=(-10, 10)),
-            slt.CropTransform(crop_size=(kvs['args'].crop_size, kvs['args'].crop_size), crop_mode='r'),
+            crop_train,
             slt.ImageGammaCorrection(p=0.5, gamma_range=(0.5, 1.5)),
         ]),
         unpack_solt_data,
         pack_tensors,
     ]
 
+    if not kvs['args'].siamese:
+        resize_val = slc.Stream([
+            slt.ResizeTransform((kvs['args'].inp_size, kvs['args'].inp_size)),
+            slt.CropTransform(crop_size=(kvs['args'].crop_size, kvs['args'].crop_size), crop_mode='c'),
+        ])
+    else:
+        resize_val = slc.Stream()
+
     val_trf = [
         wrap2solt,
         slc.Stream([
             slt.PadTransform(pad_to=(kvs['args'].imsize, kvs['args'].imsize)),
             slt.CropTransform(crop_size=(kvs['args'].imsize, kvs['args'].imsize), crop_mode='c'),
-            slt.ResizeTransform((kvs['args'].inp_size, kvs['args'].inp_size)),
-            slt.CropTransform(crop_size=(kvs['args'].crop_size, kvs['args'].crop_size), crop_mode='c'),
+            resize_val,
         ]),
         unpack_solt_data,
         pack_tensors,
