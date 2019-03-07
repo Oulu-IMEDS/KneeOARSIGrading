@@ -1,0 +1,152 @@
+import cv2
+import sys
+import pickle
+import argparse
+import os
+import glob
+import json
+from functools import partial
+import numpy as np
+
+from termcolor import colored
+import torch
+from torch.utils.data import DataLoader
+from torch.utils.data.sampler import SequentialSampler
+from torchvision.transforms import Compose
+from tqdm import tqdm
+
+
+from oarsigrading.kvs import GlobalKVS
+from oarsigrading.training.dataset import OARSIGradingDataset
+from oarsigrading.evaluation import metrics
+from oarsigrading.training.model_zoo import backbone_name
+from oarsigrading.training.model import OARSIGradingNet, OARSIGradingNetSiamese
+import oarsigrading.evaluation.tta as tta
+from oarsigrading.training.transforms import apply_by_index
+
+cv2.ocl.setUseOpenCL(False)
+cv2.setNumThreads(0)
+
+DEBUG = sys.gettrace() is not None
+
+if __name__ == "__main__":
+    kvs = GlobalKVS()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset_root', default='')
+    parser.add_argument('--meta_root', default='')
+    parser.add_argument('--tta', type=bool, default=False)
+    parser.add_argument('--bs', type=int, default=32)
+    parser.add_argument('--n_threads', type=int, default=12)
+    parser.add_argument('--snapshots_root', default='')
+    parser.add_argument('--snapshot', default='')
+    parser.add_argument('--save_dir', default='')
+    args = parser.parse_args()
+
+    with open(os.path.join(args.snapshots_root, args.snapshot, 'session.pkl'), 'rb') as f:
+        session_backup = pickle.load(f)
+
+    train_set = session_backup["args"][0].train_set
+    if train_set == 'oai':
+        test_set = 'most'
+    else:
+        test_set = 'oai'
+    print(colored('====> ', 'green') + f'Loading {test_set} dataset')
+    metadata = session_backup[f'{test_set}_meta'][0]
+
+    layers, dw, se = session_backup['args'][0].backbone_depth, \
+        session_backup['args'][0].dw, \
+        session_backup['args'][0].se
+
+    bb_name = backbone_name(layers, se, dw)
+    print(colored('====> ', 'blue') + f'[{args.snapshot}] {bb_name}')
+    predicts_avg_oarsi = 0
+    predicts_avg_kl = 0
+    for fold_id in range(session_backup['args'][0].n_folds):
+        fnames = list()
+        predicts_oarsi = list()
+        predicts_kl = list()
+        gt = list()
+
+        print(colored('====> ', 'red') + f'Loading fold [{fold_id}]')
+        snapshot_name = glob.glob(os.path.join(args.snapshots_root, args.snapshot, f'fold_{fold_id}*.pth'))
+        if len(snapshot_name) == 0:
+            continue
+        snapshot_name = snapshot_name[0]
+        if getattr(session_backup['args'][0], 'siamese', False):
+            net = OARSIGradingNetSiamese(backbone=session_backup['args'][0].siamese_bb,
+                                         dropout=session_backup['args'][0].dropout_rate)
+        else:
+            net = OARSIGradingNet(bb_depth=layers, dropout=session_backup['args'][0].dropout_rate,
+                                  cls_bnorm=session_backup['args'][0].use_bnorm, se=se, dw=dw,
+                                  use_gwap=getattr(session_backup['args'][0], 'use_gwap', False),
+                                  use_gwap_hidden=getattr(session_backup['args'][0], 'use_gwap_hidden', False))
+
+        net.load_state_dict(torch.load(snapshot_name)['net'])
+
+        if torch.cuda.device_count() > 1:
+            net = torch.nn.DataParallel(net).to('cuda')
+        net.eval()
+
+        if args.tta:
+            print(colored('====> ', 'green') + f'5-crop TTA will be used')
+            tta_cropper = partial(apply_by_index,
+                                  transform=partial(tta.five_crop, size=session_backup['args'][0].crop_size),
+                                  idx=0)
+
+            test_trf = Compose([session_backup['val_trf'][0], tta_cropper])
+        else:
+            test_trf = session_backup['val_trf'][0]
+
+        test_dataset = OARSIGradingDataset(metadata, test_trf)
+        val_loader = DataLoader(test_dataset, batch_size=args.bs,
+                                num_workers=args.n_threads,
+                                sampler=SequentialSampler(test_dataset))
+
+        with torch.no_grad():
+            for batch in tqdm(val_loader, total=len(val_loader), desc=f'Predicting fold {fold_id}:'):
+                if getattr(session_backup['args'][0], 'siamese', False):
+                    inp_med = batch['img_med']
+                    inp_lat = batch['img_lat']
+                    _, kl_probs, oarsi_probs = tta.eval_batch(net, (inp_med, inp_lat),
+                                                                      batch['target'], return_probs=True)
+                else:
+
+                    _, kl_probs, oarsi_probs = tta.eval_batch(net, batch['img'],
+                                                                      batch['target'], return_probs=True)
+
+                predicts_kl.append(kl_probs)
+                predicts_oarsi.append(oarsi_probs)
+
+                gt.append(batch['target'].to('cpu').numpy().squeeze())
+                fnames.extend(batch['ID'])
+
+        gt, predicts_kl, predicts_oarsi = np.vstack(gt).squeeze(), np.vstack(predicts_kl), np.vstack(predicts_oarsi)
+        predicts_avg_oarsi += predicts_oarsi
+        predicts_avg_kl += predicts_kl
+
+    predicts_avg_oarsi /= session_backup['args'][0].n_folds
+    predicts_avg_kl /= session_backup['args'][0].n_folds
+
+    save_fld = os.path.join(args.snapshots_root, args.snapshot, 'test_inference')
+    os.makedirs(save_fld, exist_ok=True)
+    np.savez_compressed(os.path.join(save_fld, f'results_{"TTA" if args.tta else "plain"}.npz'),
+                        fnames=fnames,
+                        gt=gt,
+                        predicts_kl=predicts_avg_kl,
+                        predicts_oarsi=predicts_avg_oarsi)
+
+    kl_preds = predicts_avg_kl.argmax(1)
+    oarsi_preds = predicts_avg_oarsi.argmax(2)
+    stacked = np.hstack((kl_preds.reshape(kl_preds.shape[0], 1), oarsi_preds))
+
+    metrics_dict = metrics.compute_metrics(gt, stacked)
+    model_info = dict()
+    model_info['backbone'] = bb_name
+    model_info['gwap'] = getattr(session_backup['args'][0], 'use_gwap', False)
+    model_info['gwap_hidden'] = getattr(session_backup['args'][0], 'use_gwap_hidden', False)
+    model_info['weighted_sampling'] = getattr(session_backup['args'][0], 'weighted_sampling', False)
+
+    metrics_dict['model'] = model_info
+
+    with open(os.path.join(save_fld, f'metrics_{"TTA" if args.tta else "plain"}.json'), 'w') as f:
+        json.dump(metrics_dict, f)

@@ -21,7 +21,7 @@ def five_crop(img, size):
     return torch.stack((c_cr, ul_cr, ur_cr, bl_cr, br_cr))
 
 
-def eval_batch(net, inputs, target):
+def eval_batch(net, inputs, target, return_probs=False):
     """Evaluates TTA for a single batch"""
 
     inp_lat = None
@@ -57,8 +57,20 @@ def eval_batch(net, inputs, target):
         else:
             outputs = net(inp_med, inp_lat)
 
+    probs_kl = None
+    probs_oarsi = np.zeros((outputs[1].size(0), len(outputs[1:]), outputs[1].size(1)), dtype=np.float32)
+
     tmp_preds = np.zeros(target.size(), dtype=np.int64)
     for task_id, o in enumerate(outputs):
-        tmp_preds[:, task_id] = outputs[task_id].to('cpu').squeeze().argmax(1)
+        outs_cur = outputs[task_id].to('cpu').squeeze().numpy().astype(np.float32)
+        if task_id == 0:
+            probs_kl = outs_cur
+        else:
+            probs_oarsi[:, task_id-1, :] = outs_cur
+
+        tmp_preds[:, task_id] = outs_cur.argmax(1)
+
+    if return_probs:
+        return tmp_preds, probs_kl, probs_oarsi
 
     return tmp_preds

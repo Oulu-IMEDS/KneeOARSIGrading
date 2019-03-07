@@ -20,5 +20,10 @@ do
         --dataset_root ${DATA_DIR} \
         --meta_root ${META_DIR}\
         --snapshot ${SNP_NAME}
+
+    python test.py --snapshots ${SNAPSHOTS_DIR} \
+        --dataset_root ${DATA_DIR} \
+        --meta_root ${META_DIR}\
+        --snapshot ${SNP_NAME}
 done
 

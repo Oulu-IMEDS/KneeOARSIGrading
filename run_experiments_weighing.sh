@@ -70,7 +70,12 @@ cd scripts
 
 for SNP_NAME in $(ls ${SNAPSHOTS_DIR} | grep ${SNP_PREF});
 do
-    python oof_inference.py --snapshots ${SNAPSHOTS_DIR} \
+    #python oof_inference.py --snapshots ${SNAPSHOTS_DIR} \
+    #    --dataset_root ${DATA_DIR} \
+    #    --meta_root ${META_DIR}\
+    #    --snapshot ${SNP_NAME}
+
+    python test.py --snapshots ${SNAPSHOTS_DIR} \
         --dataset_root ${DATA_DIR} \
         --meta_root ${META_DIR}\
         --snapshot ${SNP_NAME}
