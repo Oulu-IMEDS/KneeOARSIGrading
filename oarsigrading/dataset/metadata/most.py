@@ -5,6 +5,9 @@ import pandas as pd
 
 
 def get_most_meta(meta_path):
+    # SIDES numbering is made according to the OAI notation
+    # SIDE=1 - Right
+    # SIDE=2 - Left
     print('==> Processing', os.path.join(meta_path, 'mostv01235xray.sas7bdat'))
     most_meta = read_sas7bdat(os.path.join(meta_path, 'mostv01235xray.sas7bdat'))
 
@@ -26,7 +29,7 @@ def get_most_meta(meta_path):
             trunc_feature_names = list(map(lambda x: 'XR' + x[4:], features[1:]))
             tmp[trunc_feature_names] = tmp[features[1:]]
             tmp.drop(features[1:], axis=1, inplace=True)
-            tmp['SIDE'] = int(1 if leg == 'L' else 2)
+            tmp['SIDE'] = int(1 if leg == 'R' else 2)
             tmp = tmp[~tmp.isnull().any(1)]
             tmp['VISIT'] = follow_up_dict_most[visit_id]
             tmp['ID'] = tmp['MOSTID'].copy()

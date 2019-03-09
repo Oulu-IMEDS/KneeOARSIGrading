@@ -23,6 +23,7 @@ from oarsigrading.training.model_zoo import backbone_name
 from oarsigrading.training.model import OARSIGradingNet, OARSIGradingNetSiamese
 import oarsigrading.evaluation.tta as tta
 from oarsigrading.training.transforms import apply_by_index
+import pandas as pd
 
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
@@ -45,13 +46,16 @@ if __name__ == "__main__":
     with open(os.path.join(args.snapshots_root, args.snapshot, 'session.pkl'), 'rb') as f:
         session_backup = pickle.load(f)
 
-    train_set = session_backup["args"][0].train_set
-    if train_set == 'oai':
-        test_set = 'most'
+    oai_meta = pd.read_pickle(os.path.join(args.snapshots_root, 'oai_meta.pkl'))
+    most_meta = pd.read_pickle(os.path.join(args.snapshots_root, 'most_meta.pkl'))
+
+    most_meta = most_meta[(most_meta.XRKL >= 0) & (most_meta.XRKL <= 4)]
+    oai_meta = oai_meta[(oai_meta.XRKL >= 0) & (oai_meta.XRKL <= 4)]
+
+    if session_backup["args"][0].train_set == 'oai':
+        metadata = most_meta
     else:
-        test_set = 'oai'
-    print(colored('====> ', 'green') + f'Loading {test_set} dataset')
-    metadata = session_backup[f'{test_set}_meta'][0]
+        metadata = oai_meta
 
     layers, dw, se = session_backup['args'][0].backbone_depth, \
         session_backup['args'][0].dw, \
@@ -108,11 +112,17 @@ if __name__ == "__main__":
                     inp_med = batch['img_med']
                     inp_lat = batch['img_lat']
                     _, kl_probs, oarsi_probs = tta.eval_batch(net, (inp_med, inp_lat),
-                                                                      batch['target'], return_probs=True)
+                                                              batch['target'], return_probs=True)
                 else:
 
                     _, kl_probs, oarsi_probs = tta.eval_batch(net, batch['img'],
-                                                                      batch['target'], return_probs=True)
+                                                              batch['target'], return_probs=True)
+                    """
+                    for z in range(batch['img'].size(0)):
+                        plt.title(str(batch['ID'][z])+'_'+str(batch['SIDE'][z].item())+'_'+str(batch['VISIT'][z]))
+                        plt.imshow(batch['img'].to('cpu').numpy()[z][0, :, :], cmap=plt.cm.Greys_r)
+                        plt.show()
+                    """
 
                 predicts_kl.append(kl_probs)
                 predicts_oarsi.append(oarsi_probs)
