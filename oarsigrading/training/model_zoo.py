@@ -19,12 +19,14 @@ def backbone_name(layers, se, dw):
         elif se and not dw:
             bb_name = 'se_resnet50'
         else:
-
             bb_name = 'se_resnext50_32x4d'
     elif layers == 101:
-        bb_name = 'se_resnet101'
-    elif layers == 152:
-        bb_name = 'se_resnet152'
+        if not se and not dw:
+            bb_name = 'resnet101'
+        elif se and not dw:
+            bb_name = 'se_resnet101'
+        else:
+            bb_name = 'se_resnext101_32x4d'
     else:
         raise NotImplementedError
     return bb_name
