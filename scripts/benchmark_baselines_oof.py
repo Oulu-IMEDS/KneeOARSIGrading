@@ -14,7 +14,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--snapshots_dir', default='/media/lext/FAST/OARSI_grading_project/workdir/'
                                                    'oarsi_grades_snapshots_gwap/')
+    parser.add_argument('--phase', choices=['oof', 'test'], default='oof')
+    parser.add_argument('--precision', type=int, default=4)
     args = parser.parse_args()
+
     for weighted in [False, True]:
         for gwap in [False, True]:
             for gwap_hidden in [False, True]:
@@ -27,7 +30,8 @@ if __name__ == "__main__":
                 print(exp)
                 print('='*80)
                 for model in ['resnet18', 'resnet34', 'resnet50', 'se_resnet50', 'se_resnext50_32x4d']:
-                    for snp in glob.glob(os.path.join(args.snapshots_dir, '*', 'oof_inference/metrics_plain.json')):
+                    for snp in glob.glob(os.path.join(args.snapshots_dir, '*', f'{args.phase}_inference',
+                                                      'metrics_plain.json')):
                         with open(snp, 'r') as f:
                             oof_res = json.load(f)
 
@@ -40,26 +44,43 @@ if __name__ == "__main__":
                         if oof_res['model']['gwap_hidden'] != gwap_hidden:
                             continue
 
-                        template = '& {0}                           '
-                        template += '& {1:.4f}                   '
-                        template += '& {1:.4f}         '
-                        template += '& {2:.4f}                  '
-                        template += '& {3:.4f}         '
-                        template += '& {4:.4f}                  '
-                        template += '& {5:.4f}         '
-                        template += '& {6:.4f}                  '
-                        template += '\\'
+                        template = '{0}                           '
+                        if args.precision == 2:
+                            template += '& {1:.2f}         '
+                            template += '& {2:.2f}                  '
+                            template += '& {3:.2f}         '
+                            template += '& {4:.2f}                  '
+                            template += '& {5:.2f}         '
+                            template += '& {6:.2f}                  '
+                            template += '& {7:.2f}                  '
+                        elif args.precision == 3:
+                            template += '& {1:.3f}         '
+                            template += '& {2:.3f}                  '
+                            template += '& {3:.3f}         '
+                            template += '& {4:.3f}                  '
+                            template += '& {5:.3f}         '
+                            template += '& {6:.3f}                  '
+                            template += '& {7:.3f}                  '
+                        elif args.precision == 4:
+                            template += '& {1:.4f}         '
+                            template += '& {2:.4f}                  '
+                            template += '& {3:.4f}         '
+                            template += '& {4:.4f}                  '
+                            template += '& {5:.4f}         '
+                            template += '& {6:.4f}                  '
+                            template += '& {7:.4f}                  '
 
+                        template += '\\'
                         template += '\\'
 
                         res = template.format(model_dict[oof_res['model']['backbone']],
-                                              np.round(oof_res['kappa_kl'], 4),
-                                              np.round(oof_res['kappa_osfl'], 4),
-                                              np.round(oof_res['kappa_osfm'], 4),
-                                              np.round(oof_res['kappa_ostl'], 4),
-                                              np.round(oof_res['kappa_ostm'], 4),
-                                              np.round(oof_res['kappa_jsl'], 4),
-                                              np.round(oof_res['kappa_jsm'], 4)
+                                              np.round(oof_res['kappa_kl'], args.precision),
+                                              np.round(oof_res['kappa_osfl'], args.precision),
+                                              np.round(oof_res['kappa_osfm'], args.precision),
+                                              np.round(oof_res['kappa_ostl'], args.precision),
+                                              np.round(oof_res['kappa_ostm'], args.precision),
+                                              np.round(oof_res['kappa_jsl'], args.precision),
+                                              np.round(oof_res['kappa_jsm'], args.precision)
                                               )
 
                         print(res)
