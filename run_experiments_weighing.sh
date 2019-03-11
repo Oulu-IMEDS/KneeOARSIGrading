@@ -26,9 +26,6 @@ cd scripts
 #python train.py --backbone_depth 50 --se True --dw True --snapshots ${SNAPSHOTS_DIR} \
 # --dataset_root ${DATA_DIR} --meta_root ${META_DIR}
 
-#python train.py --backbone_depth 101 --se True --dw True --snapshots ${SNAPSHOTS_DIR} \
-# --dataset_root ${DATA_DIR} --meta_root ${META_DIR}
-
 # -------------------------------------------------------------- #
 # --------------------KL-based Weighing------------------------- #
 # -------------------------------------------------------------- #
@@ -47,9 +44,6 @@ cd scripts
 
 #python train.py --backbone_depth 50 --se True --dw True  --weighted_sampling True --snapshots ${SNAPSHOTS_DIR}\
 # --dataset_root ${DATA_DIR} --meta_root ${META_DIR}
-
-#python train.py --backbone_depth 101 --se True --dw True --snapshots ${SNAPSHOTS_DIR} \
-# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --weighted_sampling True
 
 
 for SNP_NAME in $(ls ${SNAPSHOTS_DIR} | grep ${SNP_PREF});
