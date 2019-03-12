@@ -5,6 +5,30 @@ import os
 import pandas as pd
 import argparse
 
+
+def plot_table_data(dataset, data_name):
+    print('\\hline')
+    matr = []
+    for feature in ['XRKL', 'XROSF', 'XROST', 'XRJS']:
+        if feature == 'XRKL':
+            vals = dataset['XRKL'].values
+            counts, _ = np.histogram(vals, bins=np.arange(6).astype(int))
+            matr.append(counts)
+        else:
+            for comp in ['L', 'M']:
+                vals = dataset[feature + comp].values
+                counts, _ = np.histogram(vals, bins=np.arange(6).astype(int))
+                matr.append(counts)
+
+    print(f'\\multirow{{5}}{{*}}{{{data_name}}}  ', end='')
+    print(f'& \\multirow{{5}}{{*}}{{{dataset.shape[0]}}}  ', end='')
+    for grade_n, row in enumerate(np.vstack(matr).T):
+        if grade_n > 0:
+            print('& ', end='')
+        print('& ' + str(grade_n) + ' & '+ ' & '.join([f'{el if el != 0 else "-"}' for el in row]) + '\\\\')
+    print('\\hline')
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--snapshots_dir', default='/media/lext/FAST/OARSI_grading_project/workdir/'
@@ -16,61 +40,8 @@ if __name__ == "__main__":
 
     most_meta = most_meta[(most_meta.XRKL >= 0) & (most_meta.XRKL <= 4)]
     oai_meta = oai_meta[(oai_meta.XRKL >= 0) & (oai_meta.XRKL <= 4)]
+    plot_table_data(oai_meta, 'OAI')
+    plot_table_data(most_meta, 'MOST')
 
-    # Train
-    ## KL
-    counts, _ = np.histogram(oai_meta.XRKL.values, bins=np.arange(6).astype(int))
-    res = '{} & {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3], counts[4])
-
-    ## Lateral
-    counts, _ = np.histogram(oai_meta.XROSFL.values, bins=np.arange(5).astype(int))
-    res = '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-
-    counts, _ = np.histogram(oai_meta.XROSTL.values, bins=np.arange(5).astype(int))
-    res += '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-
-    counts, _ = np.histogram(oai_meta.XRJSL.values, bins=np.arange(5).astype(int))
-    res += '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-    res += '\\\\'
-    print(res)
-    ## Medial
-    counts, _ = np.histogram(oai_meta.XROSFM.values, bins=np.arange(5).astype(int))
-    res = '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-
-    counts, _ = np.histogram(oai_meta.XROSTM.values, bins=np.arange(5).astype(int))
-    res += '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-
-    counts, _ = np.histogram(oai_meta.XRJSM.values, bins=np.arange(5).astype(int))
-    res += '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-    res += '\\\\'
-    print(res)
-
-    # Test
-    ## KL
-    counts, _ = np.histogram(most_meta.XRKL.values, bins=np.arange(6).astype(int))
-    res = '{} & {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3], counts[4])
-
-    ## Lateral
-    counts, _ = np.histogram(most_meta.XROSFL.values, bins=np.arange(5).astype(int))
-    res = '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-
-    counts, _ = np.histogram(most_meta.XROSTL.values, bins=np.arange(5).astype(int))
-    res += '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-
-    counts, _ = np.histogram(most_meta.XRJSL.values, bins=np.arange(5).astype(int))
-    res += '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-    res += '\\\\'
-    print(res)
-    ## Medial
-    counts, _ = np.histogram(most_meta.XROSFM.values, bins=np.arange(5).astype(int))
-    res = '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-
-    counts, _ = np.histogram(most_meta.XROSTM.values, bins=np.arange(5).astype(int))
-    res += '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-
-    counts, _ = np.histogram(most_meta.XRJSM.values, bins=np.arange(5).astype(int))
-    res += '& {} & {} & {} & {}'.format(counts[0], counts[1], counts[2], counts[3])
-    res += '\\\\'
-    print(res)
 
 
