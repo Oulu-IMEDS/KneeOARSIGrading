@@ -7,8 +7,7 @@ import json
 import numpy as np
 import os
 import argparse
-from sklearn.metrics import classification_report, mean_squared_error, balanced_accuracy_score, cohen_kappa_score
-from sklearn.metrics import roc_auc_score, roc_curve
+from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, average_precision_score
 
 model_dict = {'resnet18': 'Resnet-18',
              'resnet34': 'Resnet-34',
@@ -20,8 +19,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--snapshots_dir', default='/media/lext/FAST/OARSI_grading_project/workdir/'
                                                    'oarsi_grades_snapshots_weighted/')
+    parser.add_argument('--save_dir', default='/media/lext/FAST/OARSI_grading_project/workdir/Results')
     parser.add_argument('--precision', type=int, default=2)
     args = parser.parse_args()
+
+    os.makedirs(os.path.join(args.save_dir, 'pics'), exist_ok=True)
 
     for weighted in [False, True]:
         for gwap in [False, True]:
@@ -57,31 +59,90 @@ if __name__ == "__main__":
                         predicts_oarsi = data['predicts_oarsi']
 
                         print(f'====> {model}')
-                        print(f'=======> KL')
-                        clf_rep = classification_report(gt[:, 0],
-                                                        predicts_kl.argmax(1))
 
                         probs_oa = predicts_kl[:, 2:].sum(1)
                         gt_oa = gt[:, 0] >= 2
 
+                        probs_ostl = np.hstack((predicts_oarsi[:, 0, 1:].sum(1), predicts_oarsi[:, 1, 1:].sum(1)))
+                        gt_ostl = np.hstack((gt[:, 1] >= 1, gt[:, 2] >= 1))
+
+                        probs_ostm = np.hstack((predicts_oarsi[:, 3, 1:].sum(1), predicts_oarsi[:, 4, 1:].sum(1)))
+                        gt_ostm = np.hstack((gt[:, 4] >= 1, gt[:, 5] >= 1))
+
+                        probs_jsnl = predicts_oarsi[:, 3, 1:].sum(1)
+                        gt_jsnl = gt[:, 4] >= 1
+
+                        probs_jsnm = predicts_oarsi[:, 5, 1:].sum(1)
+                        gt_jsnm = gt[:, 6] >= 1
+
                         features = ['OARSI OST-TL', 'OARSI OST-FL', 'OARSI JSN-L',
                                     'OARSI OST-TM', 'OARSI OST-FM', 'OARSI JSN-M']
 
-                        fpr1, tpr1, _ = roc_curve(gt_oa, probs_oa)
-                        auc = np.round(roc_auc_score(gt_oa,  probs_oa), 4)
+                        matplotlib.rcParams.update({'font.size': 18})
+                        f = plt.figure(figsize=(6, 6))
 
-                        matplotlib.rcParams.update({'font.size': 16})
-                        plt.figure(figsize=(6, 6))
-                        plt.plot(fpr1, tpr1, label='OA vs non-OA'.format(probs_oa.shape[0]), lw=2, c='b')
+                        fpr1, tpr1, _ = roc_curve(gt_oa, probs_oa)
+                        auc_oa = np.round(roc_auc_score(gt_oa,  probs_oa), 4)
+                        plt.plot(fpr1, tpr1, label=f'OA vs non-OA. AUC {auc_oa:.2}', lw=2, c='b')
+
+                        fpr1, tpr1, _ = roc_curve(gt_ostl, probs_ostl)
+                        auc_ostl = np.round(roc_auc_score(gt_ostl, probs_ostl), 4)
+                        plt.plot(fpr1, tpr1, label=f'Ost. Lateral. AUC {auc_ostl:.2}', lw=2, c='r')
+
+                        fpr1, tpr1, _ = roc_curve(gt_ostm, probs_ostm)
+                        auc_ostm = np.round(roc_auc_score(gt_ostm, probs_ostm), 4)
+                        plt.plot(fpr1, tpr1, label=f'Ost. Medial. AUC {auc_ostm:.2}', lw=2, c='r', linestyle='--')
+
+                        fpr1, tpr1, _ = roc_curve(gt_jsnl, probs_jsnl)
+                        auc_jsnl = np.round(roc_auc_score(gt_jsnl, probs_jsnl), 4)
+                        plt.plot(fpr1, tpr1, label=f'JSN. Lateral. AUC {auc_jsnl:.2}', lw=2, c='g')
+
+                        fpr1, tpr1, _ = roc_curve(gt_jsnm, probs_jsnm)
+                        auc_jsnm = np.round(roc_auc_score(gt_jsnm, probs_jsnm), 4)
+                        plt.plot(fpr1, tpr1, label=f'JSN. Medial. AUC {auc_jsnm:.2}', lw=2, c='g', linestyle='--')
+
                         plt.grid()
                         plt.xlabel('False positive rate')
                         plt.ylabel('True positive rate')
                         plt.xlim(0, 1)
                         plt.ylim(0, 1)
                         plt.tight_layout()
-                        plt.show()
+                        plt.legend()
+                        plt.savefig(os.path.join(args.save_dir, 'pics', 'oa_roc.pdf'), bbox_inches='tight')
+                        plt.close(f)
 
-                        print('AUC [OA]:', auc)
+                        matplotlib.rcParams.update({'font.size': 18})
+                        f = plt.figure(figsize=(6, 6))
+
+                        recall, precision, _ = precision_recall_curve(gt_oa, probs_oa)
+                        ap_oa = np.round(average_precision_score(gt_oa,  probs_oa), 4)
+                        plt.plot(recall, precision, label=f'OA vs non-OA. AP {ap_oa:.2}', lw=2, c='b')
+
+                        recall, precision, _ = precision_recall_curve(gt_ostl, probs_ostl)
+                        ap_ostl = np.round(average_precision_score(gt_ostl, probs_ostl), 4)
+                        plt.plot(recall, precision, label=f'Ost. Lateral. AP {ap_ostl:.2}', lw=2, c='r')
+
+                        recall, precision, _ = precision_recall_curve(gt_ostm, probs_ostm)
+                        ap_ostm = np.round(average_precision_score(gt_ostm, probs_ostm), 4)
+                        plt.plot(recall, precision, label=f'Ost. Medial. AP {ap_ostm:.2}', lw=2, c='r', linestyle='--')
+
+                        recall, precision, _ = precision_recall_curve(gt_jsnl, probs_jsnl)
+                        ap_jsnl = np.round(average_precision_score(gt_jsnl, probs_jsnl), 4)
+                        plt.plot(recall, precision, label=f'JSN. Lateral. AP {ap_jsnl:.2}', lw=2, c='g')
+
+                        recall, precision, _ = precision_recall_curve(gt_jsnm, probs_jsnm)
+                        ap_jsnm = np.round(average_precision_score(gt_jsnm, probs_jsnm), 4)
+                        plt.plot(recall, precision, label=f'JSN. Medial. AP {ap_jsnm:.2}', lw=2, c='g', linestyle='--')
+
+                        plt.grid()
+                        plt.xlabel('Recall')
+                        plt.ylabel('Precision')
+                        plt.xlim(0, 1)
+                        plt.ylim(0, 1)
+                        plt.tight_layout()
+                        plt.legend()
+                        plt.savefig(os.path.join(args.save_dir, 'pics', 'oa_pr.pdf'), bbox_inches='tight')
+                        plt.show()
 
 
 
