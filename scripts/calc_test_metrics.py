@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--snapshots_dir', default='/media/lext/FAST/OARSI_grading_project/workdir/'
                                                    'oarsi_grades_snapshots_weighted/')
-    parser.add_argument('--precision', type=int, default=4)
+    parser.add_argument('--precision', type=int, default=2)
     args = parser.parse_args()
 
     for weighted in [False, True]:
@@ -53,75 +53,45 @@ if __name__ == "__main__":
                         predicts_oarsi = data['predicts_oarsi']
 
                         print(f'====> {model}')
-                        print(f'======> KL')
-                        print(classification_report(gt[:, 0],
-                                                    predicts_kl.argmax(1)))
-                        print('MSE', np.round(mean_squared_error(gt[:, 0],
-                                                                 predicts_kl.argmax(1)), 2))
-                        print('Balanced acc.', np.round(balanced_accuracy_score(gt[:, 0],
-                                                                                predicts_kl.argmax(1)), 2))
-                        print('Kappa', np.round(cohen_kappa_score(gt[:, 0],
-                                                                  predicts_kl.argmax(1), weights='quadratic'), 2))
+                        print(f'=======> KL')
+                        clf_rep = classification_report(gt[:, 0],
+                                                        predicts_kl.argmax(1))
+                        f1_weighted = float(clf_rep.split('\n')[-2].split()[-2])
 
-                        print(f'======> OARSI OST-TL')
-                        print(classification_report(gt[:, 1],
-                                                    predicts_oarsi[:, 0, :].argmax(1)))
-                        print('MSE', np.round(mean_squared_error(gt[:, 1],
-                                                                 predicts_oarsi[:, 0, :].argmax(1)), 2))
-                        print('Balanced acc.', np.round(balanced_accuracy_score(gt[:, 1],
-                                                                                predicts_oarsi[:, 0, :].argmax(1)), 2))
-                        print('Kappa', np.round(cohen_kappa_score(gt[:, 1],
-                                                                  predicts_oarsi[:, 0, :].argmax(1),
-                                                                  weights='quadratic'), 2))
+                        mse = mean_squared_error(gt[:, 0], predicts_kl.argmax(1))
 
-                        print(f'======> OARSI OST-FL')
-                        print(classification_report(gt[:, 2],
-                                                    predicts_oarsi[:, 1, :].argmax(1)))
-                        print('MSE', np.round(mean_squared_error(gt[:, 2],
-                                                                 predicts_oarsi[:, 1, :].argmax(1)), 2))
-                        print('Balanced acc.', np.round(balanced_accuracy_score(gt[:, 2],
-                                                                                predicts_oarsi[:, 1, :].argmax(1)), 2))
-                        print('Kappa', np.round(cohen_kappa_score(gt[:, 2],
-                                                                  predicts_oarsi[:, 1, :].argmax(1),
-                                                                  weights='quadratic'), 2))
+                        acc = balanced_accuracy_score(gt[:, 0],
+                                                      predicts_kl.argmax(1))
 
-                        print(f'======> OARSI JSN-L')
-                        print(classification_report(gt[:, 3], predicts_oarsi[:, 2, :].argmax(1)))
-                        print('MSE', np.round(mean_squared_error(gt[:, 3],
-                                                                 predicts_oarsi[:, 2, :].argmax(1)), 2))
-                        print('Balanced acc.', np.round(balanced_accuracy_score(gt[:, 3],
-                                                                                predicts_oarsi[:, 2, :].argmax(1)), 2))
-                        print('Kappa', np.round(cohen_kappa_score(gt[:, 3],
-                                                                  predicts_oarsi[:, 2, :].argmax(1),
-                                                                  weights='quadratic'), 2))
+                        kappa = cohen_kappa_score(gt[:, 0], predicts_kl.argmax(1), weights='quadratic')
 
-                        print(f'======> OARSI OST-TM')
-                        print(classification_report(gt[:, 4], predicts_oarsi[:, 3, :].argmax(1)))
-                        print('MSE', np.round(mean_squared_error(gt[:, 4],
-                                                                 predicts_oarsi[:, 3, :].argmax(1)), 2))
-                        print('Balanced acc.', np.round(balanced_accuracy_score(gt[:, 4],
-                                                                                predicts_oarsi[:, 3, :].argmax(1)), 2))
-                        print('Kappa', np.round(cohen_kappa_score(gt[:, 4],
-                                                                  predicts_oarsi[:, 3, :].argmax(1),
-                                                                  weights='quadratic'), 2))
+                        print(f'{np.round(f1_weighted, args.precision)} & '
+                              f'{np.round(mse, args.precision)} & '
+                              f'{np.round(acc, args.precision)} & '
+                              f'{np.round(kappa, args.precision)} \\\\')
 
-                        print(f'======> OARSI OST-FM')
-                        print(classification_report(gt[:, 5], predicts_oarsi[:, 4, :].argmax(1)))
-                        print('MSE', np.round(mean_squared_error(gt[:, 5],
-                                                                 predicts_oarsi[:, 4, :].argmax(1)), 2))
-                        print('Balanced acc.', np.round(balanced_accuracy_score(gt[:, 5],
-                                                                                predicts_oarsi[:, 4, :].argmax(1)), 2))
-                        print('Kappa', np.round(cohen_kappa_score(gt[:, 5],
-                                                                  predicts_oarsi[:, 4, :].argmax(1),
-                                                                  weights='quadratic'), 2))
+                        features = ['OARSI OST-TL', 'OARSI OST-FL', 'OARSI JSN-L',
+                                    'OARSI OST-TM', 'OARSI OST-FM', 'OARSI JSN-M']
 
-                        print(f'======> OARSI JSN-M')
-                        print(classification_report(gt[:, 6],
-                                                    predicts_oarsi[:, 5, :].argmax(1)))
-                        print('MSE', np.round(mean_squared_error(gt[:, 6],
-                                                                 predicts_oarsi[:, 5, :].argmax(1)), 2))
-                        print('Balanced acc.', np.round(balanced_accuracy_score(gt[:, 6],
-                                                                                predicts_oarsi[:, 5, :].argmax(1)), 2))
-                        print('Kappa', np.round(cohen_kappa_score(gt[:, 6],
-                                                                  predicts_oarsi[:, 5, :].argmax(1),
-                                                                  weights='quadratic'), 2))
+                        for feature_id, feature_name in enumerate(features):
+                            clf_rep = classification_report(gt[:, feature_id+1],
+                                                            predicts_oarsi[:, feature_id, :].argmax(1))
+                            f1_weighted = float(clf_rep.split('\n')[-2].split()[-2])
+
+                            mse = mean_squared_error(gt[:, feature_id+1], predicts_oarsi[:, feature_id, :].argmax(1))
+
+                            acc = balanced_accuracy_score(gt[:, feature_id+1],
+                                                          predicts_oarsi[:, feature_id, :].argmax(1))
+                            kappa = cohen_kappa_score(gt[:, feature_id + 1], predicts_oarsi[:, feature_id, :].argmax(1),
+                                                      weights='quadratic')
+
+                            print(f'=======> ' + feature_name)
+                            #print('F1-weighted', f1_weighted)
+                            #print('MSE', np.round(mse, args.precision))
+                            #print('Balanced acc.', np.round(acc, args.precision))
+                            #print('Kappa', np.round(kappa, 2))
+
+                            print(f'{np.round(f1_weighted, args.precision)} & '
+                                  f'{np.round(mse, args.precision)} & '
+                                  f'{np.round(acc, args.precision)} & '
+                                  f'{np.round(kappa, args.precision)} \\\\')
