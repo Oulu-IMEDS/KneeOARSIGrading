@@ -33,12 +33,16 @@ def backbone_name(layers, se, dw):
 
 
 class ResNet(nn.Module):
-    def __init__(self, se, dw, layers, drop, ncls):
+    def __init__(self, se, dw, layers, drop, ncls, pretrained=True):
         super(ResNet, self).__init__()
 
         bb_name = backbone_name(layers, se, dw)
-        print(colored('====> ', 'green') + f'Pre-trained {bb_name} is used as backbone')
-        model = pretrainedmodels.__dict__[bb_name](num_classes=1000, pretrained='imagenet')
+        if pretrained:
+            print(colored('====> ', 'green') + f'Pre-trained {bb_name} is used as backbone')
+            model = pretrainedmodels.__dict__[bb_name](num_classes=1000, pretrained='imagenet')
+        else:
+            print(colored('====> ', 'green') + f'Non-pretrained  {bb_name}  is used!')
+            model = pretrainedmodels.__dict__[bb_name](num_classes=1, pretrained=None)
         self.encoder = list(model.children())[:-2]
 
         self.encoder.append(nn.AdaptiveAvgPool2d(1))

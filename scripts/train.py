@@ -32,19 +32,27 @@ if __name__ == "__main__":
                                                         kvs[f'{kvs["args"].train_set}_meta'].iloc[val_index])
 
         net, criterion = utils.init_model()
-        net.train(False)
-        utils.net_core(net).classifier.train(True)
-        optimizer = utils.init_optimizer(utils.layer_params(net, 'classifier'))
+
+        if kvs['args'].pretrained:
+            net.train(False)
+            utils.net_core(net).classifier.train(True)
+            optimizer = utils.init_optimizer(utils.layer_params(net, 'classifier'))
+        else:
+            print(colored('====> ', 'red') + 'The model will be trained from scratch!')
+            net.train(True)
+            optimizer = utils.init_optimizer(net.parameters())
+
         scheduler = utils.init_scheduler(optimizer, 0)
         for epoch in range(kvs['args'].n_epochs):
             scheduler.step()
             kvs.update('cur_epoch', epoch)
-            if epoch == kvs['args'].unfreeze_epoch:
-                print(colored('====> ', 'red') + 'Unfreezing the layers!')
-                # Making the whole model trainable
-                net.train(True)
-                optimizer.add_param_group({'params': utils.layer_params(net, 'encoder')})
-                scheduler = utils.init_scheduler(optimizer, epoch)
+            if kvs['args'].pretrained:
+                if epoch == kvs['args'].unfreeze_epoch:
+                    print(colored('====> ', 'red') + 'Unfreezing the layers!')
+                    # Making the whole model trainable
+                    net.train(True)
+                    optimizer.add_param_group({'params': utils.layer_params(net, 'encoder')})
+                    scheduler = utils.init_scheduler(optimizer, epoch)
 
             print(colored('====> ', 'green') + 'Snapshot::', kvs['snapshot_name'])
             print(colored('====> ', 'red') + 'LR:', scheduler.get_lr())

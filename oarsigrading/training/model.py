@@ -112,10 +112,10 @@ class MultiTaskHead(nn.Module):
 
 class OARSIGradingNet(nn.Module):
     def __init__(self, bb_depth=50, dropout=0.5, cls_bnorm=False, se=False, dw=False,
-                 use_gwap=False, use_gwap_hidden=False):
+                 use_gwap=False, use_gwap_hidden=False, pretrained=True):
 
         super(OARSIGradingNet, self).__init__()
-        backbone = ResNet(se, dw, bb_depth, 0, 1)
+        backbone = ResNet(se, dw, bb_depth, 0, 1, pretrained=pretrained)
         self.encoder = backbone.encoder[:-1]
         n_feats = backbone.classifier[-1].in_features
         if use_gwap:
