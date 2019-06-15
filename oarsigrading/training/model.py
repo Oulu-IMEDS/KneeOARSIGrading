@@ -112,7 +112,7 @@ class MultiTaskHead(nn.Module):
 
 class OARSIGradingNet(nn.Module):
     def __init__(self, bb_depth=50, dropout=0.5, cls_bnorm=False, se=False, dw=False,
-                 use_gwap=False, use_gwap_hidden=False, pretrained=True):
+                 use_gwap=False, use_gwap_hidden=False, pretrained=True, no_kl=False):
 
         super(OARSIGradingNet, self).__init__()
         backbone = ResNet(se, dw, bb_depth, 0, 1, pretrained=pretrained)
@@ -122,7 +122,10 @@ class OARSIGradingNet(nn.Module):
             print(colored('====> ', 'green') + f'Task-specific weighted pooling will be used')
             if use_gwap_hidden:
                 print(colored('====> ', 'green') + f'GWAP will have a hidden layer')
-        self.classifier = MultiTaskHead(n_feats, (1, 6), (5, 4), cls_bnorm, dropout, use_gwap, use_gwap_hidden)
+        if no_kl:
+            self.classifier = MultiTaskHead(n_feats, (6, ), (4, ), cls_bnorm, dropout, use_gwap, use_gwap_hidden)
+        else:
+            self.classifier = MultiTaskHead(n_feats, (1, 6), (5, 4), cls_bnorm, dropout, use_gwap, use_gwap_hidden)
 
     def forward(self, x):
         features = self.encoder(x)

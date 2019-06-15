@@ -24,6 +24,7 @@ def parse_args():
     parser.add_argument('--use_bnorm', type=bool, default=False, help='whether to use batchnorm in the classifier')
     parser.add_argument('--use_gwap', type=bool, default=False, help='whether to use task-specific gwap')
     parser.add_argument('--use_gwap_hidden', type=bool, default=False, help='whether to use hidden layer for pooling')
+    parser.add_argument('--no_kl', type=bool, default=False, help='Whether to train with KL grade or without')
 
     parser.add_argument('--weighted_sampling', type=bool, default=False, help='Weighted sampling')
     parser.add_argument('--mtw', type=bool, default=False, help='Maximum task-weighing')

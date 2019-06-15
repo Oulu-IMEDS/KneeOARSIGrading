@@ -117,7 +117,7 @@ if __name__ == "__main__":
                         gt=gt,
                         predicts=predicts)
 
-    metrics_dict = metrics.compute_metrics(gt, predicts)
+    metrics_dict = metrics.compute_metrics(gt, predicts, no_kl=getattr(session_backup['args'][0], 'no_kl', False))
     model_info = dict()
     model_info['backbone'] = bb_name
     model_info['gwap'] = getattr(session_backup['args'][0], 'use_gwap', False)

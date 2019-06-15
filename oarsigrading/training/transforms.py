@@ -71,7 +71,7 @@ def normalize_channel_wise(tensor, mean, std):
     return tensor
 
 
-def pack_tensors(res):
+def pack_tensors(res, no_kl=False):
     img_res, kl, ostl, osfl, jsl, ostm, osfm, jsm = res
     to_tensor = transforms.ToTensor()
 
@@ -84,7 +84,10 @@ def pack_tensors(res):
 
     img_res = to_tensor(img_res)
 
-    grades = torch.LongTensor(np.round([kl, ostl, osfl, jsl, ostm, osfm, jsm]).astype(int)).unsqueeze(0)
+    if no_kl:
+        grades = torch.LongTensor(np.round([ostl, osfl, jsl, ostm, osfm, jsm]).astype(int)).unsqueeze(0)
+    else:
+        grades = torch.LongTensor(np.round([kl, ostl, osfl, jsl, ostm, osfm, jsm]).astype(int)).unsqueeze(0)
 
     return img_res, img_med, img_lat, grades
 
@@ -119,7 +122,7 @@ def init_transforms(mean_vector, std_vector):
             slt.ImageGammaCorrection(p=0.5, gamma_range=(0.5, 1.5)),
         ]),
         unpack_solt_data,
-        pack_tensors,
+        partial(pack_tensors, no_kl=kvs['args'].no_kl),
     ]
 
     if not kvs['args'].siamese:
@@ -138,7 +141,7 @@ def init_transforms(mean_vector, std_vector):
             resize_val,
         ]),
         unpack_solt_data,
-        pack_tensors,
+        partial(pack_tensors, no_kl=kvs['args'].no_kl),
     ]
 
     if norm_trf is not None:
