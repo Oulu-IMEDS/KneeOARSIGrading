@@ -3,7 +3,7 @@
 SNAPSHOTS_DIR=/media/lext/FAST/OARSI_grading_project/workdir/oarsi_grades_snapshots_weighing_exp/
 DATA_DIR=/media/lext/FAST/OARSI_grading_project/Data/datasets/
 META_DIR=/media/lext/FAST/OARSI_grading_project/
-SNP_PREF=2019_03
+SNP_PREF=2019_06
 
 cd scripts
 
@@ -12,19 +12,22 @@ cd scripts
 # -------------------------------------------------------------- #
 
 #python train.py --backbone_depth 18 --snapshots ${SNAPSHOTS_DIR} \
-# --dataset_root ${DATA_DIR} --meta_root ${META_DIR}
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --pretrained True
 
 #python train.py --backbone_depth 34 --snapshots ${SNAPSHOTS_DIR} \
-# --dataset_root ${DATA_DIR} --meta_root ${META_DIR}
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --pretrained True
 
 #python train.py --backbone_depth 50 --snapshots ${SNAPSHOTS_DIR} \
-# --dataset_root ${DATA_DIR} --meta_root ${META_DIR}
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --pretrained True
 
 #python train.py --backbone_depth 50 --se True --snapshots ${SNAPSHOTS_DIR} \
-# --dataset_root ${DATA_DIR} --meta_root ${META_DIR}
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --pretrained True
 
 #python train.py --backbone_depth 50 --se True --dw True --snapshots ${SNAPSHOTS_DIR} \
-# --dataset_root ${DATA_DIR} --meta_root ${META_DIR}
+# --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --pretrained True
+
+python train.py --backbone_depth 50 --se True --dw True --snapshots ${SNAPSHOTS_DIR} \
+ --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --lr_drop 10 15
 
 # -------------------------------------------------------------- #
 # --------------------KL-based Weighing------------------------- #

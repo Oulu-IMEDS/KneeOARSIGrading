@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument('--backbone_depth', type=int, default=18, help='Width of Resnet')
     parser.add_argument('--se', type=bool, default=False, help='Use a SE-ResNet instead of plain resent50')
     parser.add_argument('--dw', type=bool, default=False, help='D-parameter of ResNeXt blocks')
+    parser.add_argument('--pretrained', type=bool, default=False, help='Whether to use ImageNet weights')
     parser.add_argument('--dropout_rate', type=float, default=0.5, help='Dropout')
     parser.add_argument('--use_bnorm', type=bool, default=False, help='whether to use batchnorm in the classifier')
     parser.add_argument('--use_gwap', type=bool, default=False, help='whether to use task-specific gwap')
