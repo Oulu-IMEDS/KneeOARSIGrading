@@ -74,7 +74,7 @@ if __name__ == "__main__":
                         template += '\\'
 
                         res = template.format(model_dict[oof_res['model']['backbone']],
-                                              np.round(oof_res['kappa_kl'], args.precision),
+                                              np.round(oof_res.get('kappa_kl', -1), args.precision),
                                               np.round(oof_res['kappa_osfl'], args.precision),
                                               np.round(oof_res['kappa_osfm'], args.precision),
                                               np.round(oof_res['kappa_ostl'], args.precision),

@@ -83,7 +83,8 @@ if __name__ == "__main__":
             net = OARSIGradingNet(bb_depth=layers, dropout=session_backup['args'][0].dropout_rate,
                                   cls_bnorm=session_backup['args'][0].use_bnorm, se=se, dw=dw,
                                   use_gwap=getattr(session_backup['args'][0], 'use_gwap', False),
-                                  use_gwap_hidden=getattr(session_backup['args'][0], 'use_gwap_hidden', False))
+                                  use_gwap_hidden=getattr(session_backup['args'][0], 'use_gwap_hidden', False),
+                                  no_kl=getattr(session_backup['args'][0], 'no_kl', False))
 
         net.load_state_dict(torch.load(snapshot_name)['net'])
 
@@ -149,7 +150,7 @@ if __name__ == "__main__":
     oarsi_preds = predicts_avg_oarsi.argmax(2)
     stacked = np.hstack((kl_preds.reshape(kl_preds.shape[0], 1), oarsi_preds))
 
-    metrics_dict = metrics.compute_metrics(gt, stacked)
+    metrics_dict = metrics.compute_metrics(gt, stacked, no_kl=getattr(session_backup['args'][0], 'no_kl', False))
     model_info = dict()
     model_info['backbone'] = bb_name
     model_info['gwap'] = getattr(session_backup['args'][0], 'use_gwap', False)
