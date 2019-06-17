@@ -58,19 +58,28 @@ def eval_batch(net, inputs, target, return_probs=False):
             outputs = net(inp_med, inp_lat)
 
     probs_kl = None
-    probs_oarsi = np.zeros((outputs[1].size(0), len(outputs[1:]), outputs[1].size(1)), dtype=np.float32)
+    if len(outputs) == 7:
+        probs_oarsi = np.zeros((outputs[1].size(0), len(outputs[1:]), outputs[1].size(1)), dtype=np.float32)
+    else:
+        probs_oarsi = np.zeros((outputs[0].size(0), len(outputs), outputs[0].size(1)), dtype=np.float32)
 
     tmp_preds = np.zeros(target.size(), dtype=np.int64)
     for task_id, o in enumerate(outputs):
         outs_cur = outputs[task_id].to('cpu').squeeze().numpy().astype(np.float32)
-        if task_id == 0:
-            probs_kl = outs_cur
+        if len(outputs) == 7:
+            if task_id == 0:
+                probs_kl = outs_cur
+            else:
+                probs_oarsi[:, task_id-1, :] = outs_cur
         else:
-            probs_oarsi[:, task_id-1, :] = outs_cur
+            probs_oarsi[:, task_id, :] = outs_cur
 
         tmp_preds[:, task_id] = outs_cur.argmax(1)
 
     if return_probs:
-        return tmp_preds, probs_kl, probs_oarsi
+        if tmp_preds.shape[1] == 7:
+            return probs_kl, probs_oarsi
+        else:
+            return probs_oarsi
 
     return tmp_preds

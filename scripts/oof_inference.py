@@ -70,7 +70,8 @@ if __name__ == "__main__":
             net = OARSIGradingNet(bb_depth=layers, dropout=session_backup['args'][0].dropout_rate,
                                   cls_bnorm=session_backup['args'][0].use_bnorm, se=se, dw=dw,
                                   use_gwap=getattr(session_backup['args'][0], 'use_gwap', False),
-                                  use_gwap_hidden=getattr(session_backup['args'][0], 'use_gwap_hidden', False), no_kl=getattr(session_backup['args'][0], 'no_kl', False))
+                                  use_gwap_hidden=getattr(session_backup['args'][0], 'use_gwap_hidden', False),
+                                  no_kl=getattr(session_backup['args'][0], 'no_kl', False))
 
         net.load_state_dict(torch.load(snapshot_name)['net'])
 
@@ -101,23 +102,38 @@ if __name__ == "__main__":
                 if session_backup['args'][0].siamese:
                     inp_med = batch['img_med']
                     inp_lat = batch['img_lat']
-                    tmp_preds = tta.eval_batch(net, (inp_med, inp_lat), batch['target'])
+                    tmp_preds = tta.eval_batch(net, (inp_med, inp_lat), batch['target'], return_probs=True)
                 else:
-                    tmp_preds = tta.eval_batch(net, batch['img'], batch['target'])
+                    tmp_preds = tta.eval_batch(net, batch['img'], batch['target'], return_probs=True)
+
                 predicts.append(tmp_preds)
                 gt.append(batch['target'].to('cpu').numpy().squeeze())
                 fnames.extend(batch['ID'])
 
-    gt, predicts = np.vstack(gt).squeeze(), np.vstack(predicts)
+    if not isinstance(predicts[0], tuple):
+        gt, probs_oarsi = np.vstack(gt).squeeze(), np.vstack(predicts)
+    else:
+        gt = np.vstack(gt).squeeze()
+        probs_kl = np.vstack(list(map(lambda x: x[0], predicts)))
+        probs_oarsi = np.vstack(list(map(lambda x: x[1], predicts)))
 
     save_fld = os.path.join(args.snapshots_root, args.snapshot, 'oof_inference')
     os.makedirs(save_fld, exist_ok=True)
     np.savez_compressed(os.path.join(save_fld, f'results_{"TTA" if args.tta else "plain"}.npz'),
                         fnames=fnames,
                         gt=gt,
-                        predicts=predicts)
+                        probs_oarsi=probs_oarsi,
+                        probs_kl=probs_oarsi)
+    predicts = []
+    if not getattr(session_backup['args'][0], 'no_kl', False):
+        predicts.append(np.expand_dims(probs_kl.argmax(1), 1))
 
-    metrics_dict = metrics.compute_metrics(gt, predicts, no_kl=getattr(session_backup['args'][0], 'no_kl', False))
+    for task_id in range(probs_oarsi.shape[1]):
+        predicts.append(np.expand_dims(probs_oarsi[:, task_id].argmax(1), 1))
+
+    predicts = np.hstack(predicts)
+
+    metrics_dict = metrics.compute_metrics(predicts, gt, no_kl=getattr(session_backup['args'][0], 'no_kl', False))
     model_info = dict()
     model_info['backbone'] = bb_name
     model_info['gwap'] = getattr(session_backup['args'][0], 'use_gwap', False)
