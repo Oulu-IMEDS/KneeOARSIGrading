@@ -1,4 +1,4 @@
-from sklearn.metrics import cohen_kappa_score
+from sklearn.metrics import cohen_kappa_score, balanced_accuracy_score
 from termcolor import colored
 import os
 from oarsigrading.kvs import GlobalKVS
@@ -6,32 +6,30 @@ from oarsigrading.kvs import GlobalKVS
 
 def compute_metrics(val_pred, val_gt, no_kl=False):
     kappas = []
+    acc = []
     for task_id in range(val_gt.shape[1]):
         kappas.append(cohen_kappa_score(val_gt[:, task_id], val_pred[:, task_id], weights='quadratic'))
+        acc.append(balanced_accuracy_score(val_gt[:, task_id], val_pred[:, task_id]))
 
-    if no_kl:
-        kappa_res = {'kappa_ostl': kappas[0],
-                     'kappa_osfl': kappas[1],
-                     'kappa_jsl': kappas[2],
-                     'kappa_ostm': kappas[3],
-                     'kappa_osfm': kappas[4],
-                     'kappa_jsm': kappas[5]
-                     }
-    else:
-        kappa_res = {'kappa_kl': kappas[0],
-                     'kappa_ostl': kappas[1],
-                     'kappa_osfl': kappas[2],
-                     'kappa_jsl': kappas[3],
-                     'kappa_ostm': kappas[4],
-                     'kappa_osfm': kappas[5],
-                     'kappa_jsm': kappas[6]
-                     }
+    res = {}
+    ind = 0
+    for feature in ['kl', 'ostl', 'osfl', 'jsl', 'ostm', 'osfm', 'jsm']:
+        if no_kl and feature == 'kl':
+            continue
+        res[f"kappa_{feature}"] = kappas[ind]
+        res[f"acc_{feature}"] = acc[ind]
+        ind += 1
 
     print(colored('==> ', 'green') + f' Kappas:')
-    for k in kappa_res:
-        print(colored('==> ', 'red') + f'{k} : {kappa_res[k]:.4f}')
+    for k in res:
+        if 'kappa' in k:
+            print(colored('==> ', 'red') + f'{k} : {res[k]:.4f}')
+    print(colored('==> ', 'green') + f' Balanced Accuracy:')
+    for k in res:
+        if 'acc' in k:
+            print(colored('==> ', 'red') + f'{k} : {res[k]:.4f}')
 
-    return kappa_res
+    return res
 
 
 def log_metrics(boardlogger, train_loss, val_loss, val_pred, val_gt):
