@@ -112,6 +112,7 @@ if __name__ == "__main__":
 
     if not isinstance(predicts[0], tuple):
         gt, probs_oarsi = np.vstack(gt).squeeze(), np.vstack(predicts)
+        probs_kl = np.zeros((probs_oarsi.shape[0], 5))
     else:
         gt = np.vstack(gt).squeeze()
         probs_kl = np.vstack(list(map(lambda x: x[0], predicts)))
@@ -123,7 +124,7 @@ if __name__ == "__main__":
                         fnames=fnames,
                         gt=gt,
                         probs_oarsi=probs_oarsi,
-                        probs_kl=probs_oarsi)
+                        probs_kl=probs_kl)
     predicts = []
     if not getattr(session_backup['args'][0], 'no_kl', False):
         predicts.append(np.expand_dims(probs_kl.argmax(1), 1))
