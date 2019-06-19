@@ -35,7 +35,7 @@ cd scripts
 #python train.py --backbone_depth 50 --se True --snapshots ${SNAPSHOTS_DIR} \
 #     --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --pretrained True --no_kl True
 
-python train.py --backbone_depth 50  --snapshots ${SNAPSHOTS_DIR} \
+python train.py --backbone_depth 50 --se True --snapshots ${SNAPSHOTS_DIR} \
  --dataset_root ${DATA_DIR} --meta_root ${META_DIR} --lr_drop 10 15 --lr 0.0001
 
 # -------------------------------------------------------------- #
