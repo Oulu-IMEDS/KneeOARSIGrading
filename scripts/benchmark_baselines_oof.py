@@ -73,15 +73,17 @@ if __name__ == "__main__":
 
                             template += '\\'
                             template += '\\'
-
+                            mult = 1
+                            if metric == 'acc':
+                                mult = 100
                             res = template.format(model_dict[oof_res['model']['backbone']],
-                                                  np.round(oof_res.get(f'{metric}_kl', -1), args.precision),
-                                                  np.round(oof_res[f'{metric}_osfl'], args.precision),
-                                                  np.round(oof_res[f'{metric}_osfm'], args.precision),
-                                                  np.round(oof_res[f'{metric}_ostl'], args.precision),
-                                                  np.round(oof_res[f'{metric}_ostm'], args.precision),
-                                                  np.round(oof_res[f'{metric}_jsl'], args.precision),
-                                                  np.round(oof_res[f'{metric}_jsm'], args.precision)
+                                                  np.round(oof_res.get(f'{metric}_kl', -1), args.precision)*mult,
+                                                  np.round(oof_res[f'{metric}_osfl'], args.precision)*mult,
+                                                  np.round(oof_res[f'{metric}_osfm'], args.precision)*mult,
+                                                  np.round(oof_res[f'{metric}_ostl'], args.precision)*mult,
+                                                  np.round(oof_res[f'{metric}_ostm'], args.precision)*mult,
+                                                  np.round(oof_res[f'{metric}_jsl'], args.precision)*mult,
+                                                  np.round(oof_res[f'{metric}_jsm'], args.precision)*mult
                                                   )
 
                             print(res)
