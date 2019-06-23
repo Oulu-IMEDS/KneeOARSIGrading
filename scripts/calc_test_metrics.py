@@ -30,6 +30,8 @@ if __name__ == "__main__":
     parser.add_argument('--snapshots_dir', default='/media/lext/FAST/OARSI_grading_project/workdir/'
                                                    'oarsi_grades_snapshots_weighted/')
     parser.add_argument('--precision', type=int, default=2)
+    parser.add_argument('--n_bootstrap', type=int, default=500)
+    parser.add_argument('--seed', type=int, default=42)
     args = parser.parse_args()
 
     for weighted in [False, True]:
@@ -73,16 +75,16 @@ if __name__ == "__main__":
 
                         f1_weighted, f1_ci_l, f1_ci_h = bootstrap_ci(partial(calc_f1_weighted, digits=args.precision),
                                                                      gt[:, 0], predicts_kl.argmax(1),
-                                                                     2000, seed=42)
+                                                                     args.n_bootstrap, seed=args.seed)
                         mse, mse_ci_l, mse_ci_h = bootstrap_ci(mean_squared_error,
                                                                gt[:, 0], predicts_kl.argmax(1),
-                                                               2000, seed=42)
+                                                               args.n_bootstrap, seed=args.seed)
                         acc, acc_ci_l, acc_ci_h = bootstrap_ci(balanced_accuracy_score,
                                                                gt[:, 0], predicts_kl.argmax(1),
-                                                               2000, seed=42)
+                                                               args.n_bootstrap, seed=args.seed)
                         kappa, kappa_ci_l, kappa_ci_h = bootstrap_ci(partial(cohen_kappa_score, weights='quadratic'),
                                                                      gt[:, 0], predicts_kl.argmax(1),
-                                                                     2000, seed=42)
+                                                                     args.n_bootstrap, seed=args.seed)
 
                         print(f'{np.round(f1_weighted, args.precision)} '
                               f'[{np.round(f1_ci_l, args.precision)}-{np.round(f1_ci_h, args.precision)}] & '
@@ -101,19 +103,22 @@ if __name__ == "__main__":
                             f1_weighted, f1_ci_l, f1_ci_h = bootstrap_ci(
                                 partial(calc_f1_weighted, digits=args.precision),
                                 gt[:, feature_id+1], predicts_oarsi[:, feature_id, :].argmax(1),
-                                2000, seed=42)
+                                2000, seed=args.seed)
+
                             mse, mse_ci_l, mse_ci_h = bootstrap_ci(mean_squared_error,
                                                                    gt[:, feature_id + 1],
                                                                    predicts_oarsi[:, feature_id, :].argmax(1),
-                                                                   2000, seed=42)
+                                                                   args.n_bootstrap, seed=args.seed)
+
                             acc, acc_ci_l, acc_ci_h = bootstrap_ci(balanced_accuracy_score,
                                                                    gt[:, feature_id + 1],
                                                                    predicts_oarsi[:, feature_id, :].argmax(1),
-                                                                   2000, seed=42)
+                                                                   args.n_bootstrap, seed=args.seed)
+
                             kappa, kappa_ci_l, kappa_ci_h = bootstrap_ci(
                                 partial(cohen_kappa_score, weights='quadratic'),
                                 gt[:, feature_id+1], predicts_oarsi[:, feature_id, :].argmax(1),
-                                2000, seed=42)
+                                args.n_bootstrap, seed=args.seed)
 
                             print(f'=======> ' + feature_name)
 
