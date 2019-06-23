@@ -103,7 +103,7 @@ if __name__ == "__main__":
                             f1_weighted, f1_ci_l, f1_ci_h = bootstrap_ci(
                                 partial(calc_f1_weighted, digits=args.precision),
                                 gt[:, feature_id+1], predicts_oarsi[:, feature_id, :].argmax(1),
-                                2000, seed=args.seed)
+                                args.n_bootstrap, seed=args.seed)
 
                             mse, mse_ci_l, mse_ci_h = bootstrap_ci(mean_squared_error,
                                                                    gt[:, feature_id + 1],
