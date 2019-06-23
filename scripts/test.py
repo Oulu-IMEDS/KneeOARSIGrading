@@ -112,18 +112,17 @@ if __name__ == "__main__":
                 if getattr(session_backup['args'][0], 'siamese', False):
                     inp_med = batch['img_med']
                     inp_lat = batch['img_lat']
-                    _, kl_probs, oarsi_probs = tta.eval_batch(net, (inp_med, inp_lat),
-                                                              batch['target'], return_probs=True)
+                    tmp_preds = tta.eval_batch(net, (inp_med, inp_lat),
+                                               batch['target'], return_probs=True)
                 else:
+                    tmp_preds = tta.eval_batch(net, batch['img'],
+                                               batch['target'], return_probs=True)
 
-                    _, kl_probs, oarsi_probs = tta.eval_batch(net, batch['img'],
-                                                              batch['target'], return_probs=True)
-                    """
-                    for z in range(batch['img'].size(0)):
-                        plt.title(str(batch['ID'][z])+'_'+str(batch['SIDE'][z].item())+'_'+str(batch['VISIT'][z]))
-                        plt.imshow(batch['img'].to('cpu').numpy()[z][0, :, :], cmap=plt.cm.Greys_r)
-                        plt.show()
-                    """
+                if isinstance(tmp_preds, tuple):
+                    kl_probs, oarsi_probs = tmp_preds
+                else:
+                    oarsi_probs = tmp_preds
+                    kl_probs = np.zeros((oarsi_probs.shape[0], 5))
 
                 predicts_kl.append(kl_probs)
                 predicts_oarsi.append(oarsi_probs)
@@ -150,6 +149,8 @@ if __name__ == "__main__":
     oarsi_preds = predicts_avg_oarsi.argmax(2)
     stacked = np.hstack((kl_preds.reshape(kl_preds.shape[0], 1), oarsi_preds))
 
+    if getattr(session_backup['args'][0], 'no_kl', False):
+        stacked = stacked[:, 1:]
     metrics_dict = metrics.compute_metrics(gt, stacked, no_kl=getattr(session_backup['args'][0], 'no_kl', False))
     model_info = dict()
     model_info['backbone'] = bb_name
