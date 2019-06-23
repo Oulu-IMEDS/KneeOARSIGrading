@@ -24,7 +24,7 @@ features = ['OARSI OST-TL', 'OARSI OST-FL', 'OARSI JSN-L',
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--snapshots_dir', default='/media/lext/FAST/OARSI_grading_project/workdir/'
-                                                   'oarsi_grades_snapshots_weighted/')
+                                                   'oarsi_grades_snapshots_weighing_exp/')
     parser.add_argument('--save_dir', default='/media/lext/FAST/OARSI_grading_project/workdir/Results')
     parser.add_argument('--precision', type=int, default=4)
     parser.add_argument('--model', default='ens_se_resnet50_se_resnext50_32x4d')
