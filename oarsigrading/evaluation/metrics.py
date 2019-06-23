@@ -2,6 +2,8 @@ from sklearn.metrics import cohen_kappa_score, balanced_accuracy_score
 from termcolor import colored
 import os
 from oarsigrading.kvs import GlobalKVS
+from tqdm import tqdm
+import numpy as np
 
 
 def compute_metrics(val_pred, val_gt, no_kl=False):
@@ -53,3 +55,50 @@ def log_metrics(boardlogger, train_loss, val_loss, val_pred, val_gt):
     kvs.update(f'val_metrics_fold_[{kvs["cur_fold"]}]', res)
 
     kvs.save_pkl(os.path.join(kvs['args'].snapshots, kvs['snapshot_name'], 'session.pkl'))
+
+
+def bootstrap_ci(metric, y, preds, n_bootstrap, seed=12345, stratified=True, alpha=95):
+    """
+    Parameters
+    ----------
+    metric : fucntion
+        Metric to compute, e.g. AUC for ROC curve or AP for PR curve
+    y : numpy.array
+        Ground truth
+    preds : numpy.array
+        Predictions
+    n_bootstrap:
+        Number of bootstrap samples to draw
+    seed : int
+        Random seed
+    stratified : bool
+        Whether to do a stratified bootstrapping
+    alpha : float
+        Confidence intervals width
+    """
+
+    np.random.seed(seed)
+    metric_vals = []
+    classes = np.unique(y)
+    inds = []
+    for cls in classes:
+        inds.append(np.where(y == cls)[0])
+
+    for _ in tqdm(range(n_bootstrap), total=n_bootstrap, desc='Bootstrap:'):
+        if stratified:
+            ind_bs = []
+            for ind_cur in inds:
+                ind_bs.append(np.random.choice(ind_cur, ind_cur.shape[0]))
+            ind = np.hstack(ind_bs)
+        else:
+            ind = np.random.choice(y.shape[0], y.shape[0])
+
+        if y[ind].sum() == 0:
+            continue
+        metric_vals.append(metric(y[ind], preds[ind]))
+
+    metric_val = metric(y, preds)
+    ci_l = np.percentile(metric_vals, (100 - alpha) // 2)
+    ci_h = np.percentile(metric_vals, alpha + (100 - alpha) // 2)
+
+    return metric_val, ci_l, ci_h

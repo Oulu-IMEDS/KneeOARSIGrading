@@ -9,18 +9,25 @@ import os
 import argparse
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, average_precision_score
 
+
 model_dict = {'resnet18': 'Resnet-18',
-             'resnet34': 'Resnet-34',
-             'resnet50': 'Resnet-50',
-             'se_resnet50': 'SE-Resnet-50',
-             'se_resnext50_32x4d': 'SE-ResNext50-32x4d'}
+              'resnet34': 'Resnet-34',
+              'resnet50': 'Resnet-50',
+              'se_resnet50': 'SE-Resnet-50',
+              'se_resnext50_32x4d': 'SE-ResNext50-32x4d',
+              'ens_se_resnet50_se_resnext50_32x4d': 'Ensemble'}
+
+
+features = ['OARSI OST-TL', 'OARSI OST-FL', 'OARSI JSN-L',
+            'OARSI OST-TM', 'OARSI OST-FM', 'OARSI JSN-M']
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--snapshots_dir', default='/media/lext/FAST/OARSI_grading_project/workdir/'
                                                    'oarsi_grades_snapshots_weighted/')
     parser.add_argument('--save_dir', default='/media/lext/FAST/OARSI_grading_project/workdir/Results')
-    parser.add_argument('--precision', type=int, default=2)
+    parser.add_argument('--precision', type=int, default=4)
+    parser.add_argument('--model', default='ens_se_resnet50_se_resnext50_32x4d')
     args = parser.parse_args()
 
     os.makedirs(os.path.join(args.save_dir, 'pics'), exist_ok=True)
@@ -36,7 +43,7 @@ if __name__ == "__main__":
                     exp += 'no-GWAP'
                 print(exp)
                 print('='*80)
-                for model in ['se_resnext50_32x4d']:
+                for model in [args.model]:
                     for snp in glob.glob(os.path.join(args.snapshots_dir, '*', 'test_inference',
                                                       'results_plain.npz')):
 
@@ -54,6 +61,9 @@ if __name__ == "__main__":
                         
                         data = np.load(snp)
                         gt = data['gt']
+
+                        if len(features)+1 != gt.shape[1]:
+                            continue
 
                         predicts_kl = data['predicts_kl']
                         predicts_oarsi = data['predicts_oarsi']
@@ -74,9 +84,6 @@ if __name__ == "__main__":
 
                         probs_jsnm = predicts_oarsi[:, 5, 1:].sum(1)
                         gt_jsnm = gt[:, 6] >= 1
-
-                        features = ['OARSI OST-TL', 'OARSI OST-FL', 'OARSI JSN-L',
-                                    'OARSI OST-TM', 'OARSI OST-FM', 'OARSI JSN-M']
 
                         matplotlib.rcParams.update({'font.size': 18})
                         f = plt.figure(figsize=(6, 6))
