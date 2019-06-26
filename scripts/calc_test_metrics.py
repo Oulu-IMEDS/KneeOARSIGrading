@@ -5,15 +5,15 @@ import os
 import argparse
 from sklearn.metrics import classification_report, mean_squared_error, balanced_accuracy_score, cohen_kappa_score
 from functools import partial
-from oarsigrading.evaluation.metrics import bootstrap_ci
+from oarsigrading.evaluation.metrics import bootstrap_ci, plot_confusion
 
 
 model_dict = {'resnet18': 'Resnet-18',
-             'resnet34': 'Resnet-34',
-             'resnet50': 'Resnet-50',
-             'se_resnet50': 'SE-Resnet-50',
-             'se_resnext50_32x4d': 'SE-ResNext50-32x4d',
-             'ens_se_resnet50_se_resnext50_32x4d': 'Ensemble'}
+              'resnet34': 'Resnet-34',
+              'resnet50': 'Resnet-50',
+              'se_resnet50': 'SE-Resnet-50',
+              'se_resnext50_32x4d': 'SE-ResNext50-32x4d',
+              'ens_se_resnet50_se_resnext50_32x4d': 'Ensemble'}
 
 features = ['OARSI OST-TL', 'OARSI OST-FL', 'OARSI JSN-L',
             'OARSI OST-TM', 'OARSI OST-FM', 'OARSI JSN-M']
@@ -32,6 +32,7 @@ if __name__ == "__main__":
     parser.add_argument('--only_first_fu', type=bool, default=False)
     parser.add_argument('--precision', type=int, default=2)
     parser.add_argument('--n_bootstrap', type=int, default=500)
+    parser.add_argument('--save_dir', default='/media/lext/FAST/OARSI_grading_project/workdir/Results/pics/')
     parser.add_argument('--seed', type=int, default=42)
     args = parser.parse_args()
 
@@ -63,7 +64,7 @@ if __name__ == "__main__":
                             continue
                         
                         data = np.load(snp)
-                        gt = data['gt']
+                        gt = data['gt'].astype(int)
 
                         if len(features)+1 != gt.shape[1]:
                             continue
@@ -79,17 +80,21 @@ if __name__ == "__main__":
                         print(f'====> {model} [{snp}]')
                         print(f'=======> KL')
 
+                        kl_preds = predicts_kl[ind_take, :].argmax(1)
+
+                        plot_confusion(gt[ind_take, 0], kl_preds, os.path.join(args.save_dir, 'conf_kl.pdf'))
+
                         f1_weighted, f1_ci_l, f1_ci_h = bootstrap_ci(partial(calc_f1_weighted, digits=args.precision),
-                                                                     gt[ind_take, 0], predicts_kl[ind_take, :].argmax(1),
+                                                                     gt[ind_take, 0], kl_preds,
                                                                      args.n_bootstrap, seed=args.seed)
                         mse, mse_ci_l, mse_ci_h = bootstrap_ci(mean_squared_error,
-                                                               gt[ind_take, 0], predicts_kl[ind_take, :].argmax(1),
+                                                               gt[ind_take, 0], kl_preds,
                                                                args.n_bootstrap, seed=args.seed)
                         acc, acc_ci_l, acc_ci_h = bootstrap_ci(balanced_accuracy_score,
-                                                               gt[ind_take, 0], predicts_kl[ind_take, :].argmax(1),
+                                                               gt[ind_take, 0], kl_preds,
                                                                args.n_bootstrap, seed=args.seed)
                         kappa, kappa_ci_l, kappa_ci_h = bootstrap_ci(partial(cohen_kappa_score, weights='quadratic'),
-                                                                     gt[ind_take, 0], predicts_kl[ind_take, :].argmax(1),
+                                                                     gt[ind_take, 0], kl_preds,
                                                                      args.n_bootstrap, seed=args.seed)
 
                         print(f'{np.round(f1_weighted, args.precision)} '
@@ -102,30 +107,34 @@ if __name__ == "__main__":
                               f'[{np.round(kappa_ci_l, args.precision)}-{np.round(kappa_ci_h, args.precision)}] \\\\')
 
                         for feature_id, feature_name in enumerate(features):
+                            feature_pred = predicts_oarsi[ind_take, feature_id, :].argmax(1)
+                            plot_confusion(gt[ind_take, feature_id+1].astype(int), feature_pred,
+                                           os.path.join(args.save_dir, f'conf_{feature_name}.pdf'), font=20)
+
                             clf_rep = classification_report(gt[ind_take, feature_id+1],
-                                                            predicts_oarsi[ind_take, feature_id, :].argmax(1),
+                                                            feature_pred,
                                                             digits=args.precision)
 
                             f1_weighted, f1_ci_l, f1_ci_h = bootstrap_ci(
                                 partial(calc_f1_weighted, digits=args.precision),
                                 gt[ind_take, feature_id+1],
-                                predicts_oarsi[ind_take, feature_id, :].argmax(1),
+                                feature_pred,
                                 args.n_bootstrap, seed=args.seed)
 
                             mse, mse_ci_l, mse_ci_h = bootstrap_ci(mean_squared_error,
                                                                    gt[ind_take, feature_id + 1],
-                                                                   predicts_oarsi[ind_take, feature_id, :].argmax(1),
+                                                                   feature_pred,
                                                                    args.n_bootstrap, seed=args.seed)
 
                             acc, acc_ci_l, acc_ci_h = bootstrap_ci(balanced_accuracy_score,
                                                                    gt[ind_take, feature_id + 1],
-                                                                   predicts_oarsi[ind_take, feature_id, :].argmax(1),
+                                                                   feature_pred,
                                                                    args.n_bootstrap, seed=args.seed)
 
                             kappa, kappa_ci_l, kappa_ci_h = bootstrap_ci(
                                 partial(cohen_kappa_score, weights='quadratic'),
                                 gt[ind_take, feature_id+1],
-                                predicts_oarsi[ind_take, feature_id, :].argmax(1),
+                                feature_pred,
                                 args.n_bootstrap, seed=args.seed)
 
                             print(f'=======> ' + feature_name)

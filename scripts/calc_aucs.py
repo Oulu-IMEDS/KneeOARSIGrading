@@ -85,8 +85,8 @@ if __name__ == "__main__":
                         probs_jsnm = predicts_oarsi[:, 5, 1:].sum(1)
                         gt_jsnm = gt[:, 6] >= 1
 
-                        matplotlib.rcParams.update({'font.size': 18})
-                        f = plt.figure(figsize=(6, 6))
+                        matplotlib.rcParams.update({'font.size': 20})
+                        f = plt.figure(figsize=(7, 7))
 
                         fpr1, tpr1, _ = roc_curve(gt_oa, probs_oa)
                         auc_oa = np.round(roc_auc_score(gt_oa,  probs_oa), 4)
@@ -118,8 +118,8 @@ if __name__ == "__main__":
                         plt.savefig(os.path.join(args.save_dir, 'pics', 'oa_roc.pdf'), bbox_inches='tight')
                         plt.close(f)
 
-                        matplotlib.rcParams.update({'font.size': 18})
-                        f = plt.figure(figsize=(6, 6))
+                        matplotlib.rcParams.update({'font.size': 20})
+                        f = plt.figure(figsize=(7, 7))
 
                         recall, precision, _ = precision_recall_curve(gt_oa, probs_oa)
                         ap_oa = np.round(average_precision_score(gt_oa,  probs_oa), 4)
