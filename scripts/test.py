@@ -66,11 +66,14 @@ if __name__ == "__main__":
     predicts_avg_oarsi = 0
     predicts_avg_kl = 0
     for fold_id in range(session_backup['args'][0].n_folds):
-        fnames = list()
+        
         predicts_oarsi = list()
         predicts_kl = list()
         gt = list()
-
+        visits = list()
+        sides = list()
+        ids = list()
+        
         print(colored('====> ', 'red') + f'Loading fold [{fold_id}]')
         snapshot_name = glob.glob(os.path.join(args.snapshots_root, args.snapshot, f'fold_{fold_id}*.pth'))
         if len(snapshot_name) == 0:
@@ -128,8 +131,10 @@ if __name__ == "__main__":
                 predicts_oarsi.append(oarsi_probs)
 
                 gt.append(batch['target'].to('cpu').numpy().squeeze())
-                fnames.extend(batch['ID'])
-
+                ids.extend(batch['ID'])
+                visits.extend(batch['VISIT'])
+                sides.extend(batch['SIDE'])
+        
         gt, predicts_kl, predicts_oarsi = np.vstack(gt).squeeze(), np.vstack(predicts_kl), np.vstack(predicts_oarsi)
         predicts_avg_oarsi += predicts_oarsi
         predicts_avg_kl += predicts_kl
@@ -140,7 +145,9 @@ if __name__ == "__main__":
     save_fld = os.path.join(args.snapshots_root, args.snapshot, 'test_inference')
     os.makedirs(save_fld, exist_ok=True)
     np.savez_compressed(os.path.join(save_fld, f'results_{"TTA" if args.tta else "plain"}.npz'),
-                        fnames=fnames,
+                        ids=ids,
+                        sides=sides,
+                        visits=visits,
                         gt=gt,
                         predicts_kl=predicts_avg_kl,
                         predicts_oarsi=predicts_avg_oarsi)

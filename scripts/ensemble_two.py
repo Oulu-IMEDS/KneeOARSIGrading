@@ -74,7 +74,9 @@ if __name__ == "__main__":
     probs_oarsi = (snapshot_1_test['predicts_oarsi'] + snapshot_2_test['predicts_oarsi']) / 2
 
     np.savez_compressed(os.path.join(save_fld, f'results_plain.npz'),
-                        fnames=snapshot_1_test['fnames'],
+                        ids=snapshot_1_test['ids'],
+                        visits=snapshot_1_test['visits'],
+                        sides=snapshot_1_test['sides'],
                         gt=gt_test,
                         predicts_oarsi=probs_oarsi,
                         predicts_kl=probs_kl)
