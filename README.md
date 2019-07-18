@@ -34,8 +34,9 @@ pip install -e .
 4. Execute `run_experiments.sh` script to train all the models.
 
 ## Results
+These are the results of our trained models:
 
-| Side | Grade | F1 score | MSE  | Balanced Accuracy | Cohen's kappa | F1 (SOTA) | Balanced Accuracy (SOTA) | Cohen's kappa (SOTA) |
+| Side | Grade | F1 score | MSE  | Balanced Accuracy | Cohen's kappa | F1 (SOTA) | Balanced Accuracy (SOTA\*) | Cohen's kappa (SOTA\*) |
 |------|-------|----------|------|-------------------|---------------|-----------|--------------------------|----------------------|
 | L    | FO    | 0.81     | 0.33 | 63.58             | 0.79          | 0.67      | 44.3                     | 0.47                 |
 |      | TO    | 0.83     | 0.22 | 68.85             | 0.84          | 0.72      | 47.6                     | 0.52                 |
@@ -45,6 +46,7 @@ pip install -e .
 |      | JSN   | 0.82     | 0.20 | 80.66             | 0.90          | 0.75      | 73.4                     | 0.75                 |
 | Both | KL    | 0.65     | 0.68 | 66.68             | 0.82          | 0.60      | 63.6                     | 0.69                 |
 
+\*We compare our method to the data published in the PhD thesis of J.Antony at Insight Centre, Dublin, Ireland (2018).
 
 ## License
 
