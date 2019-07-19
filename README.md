@@ -19,7 +19,7 @@ our methodology. However, we also provide the pre-trained models under non-comme
 Create a new conda envrionment, activate it and install this package:
 
 ```
-conda env create -f oarsi_grading.yml
+conda env create -f oarsi_grading_env.yml
 conda activate oarsi_grading
 pip install -e .
 ```
