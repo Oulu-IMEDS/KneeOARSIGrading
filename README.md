@@ -13,7 +13,7 @@ the grades for osteophytes and joint space narrowing compartment-wise according 
 
 ## Codes
 We currently have no resources to provide a very thorough documentation to the code, but we believe that it is still possible to use it in your research and get familiar with
-our methodology. However, we also provide the pre-trained models under non-commercial license. We understand that performing the first two steps is fairly challenging, therefore, the pre-trained models can be acquired here: <link>
+our methodology. However, we also provide the pre-trained models under non-commercial license. We understand that performing the first two steps is fairly challenging, therefore, the pre-trained models can be acquired here: http://mipt-ml.oulu.fi/models/KneeOARSIGrading/.
 
 ### Installation
 Create a new conda envrionment, activate it and install this package:
@@ -47,6 +47,17 @@ These are the results of our trained models:
 | Both | KL    | 0.65     | 0.68 | 66.68             | 0.82          | 0.60      | 63.6                     | 0.69                 |
 
 \*We compare our method to the data published in the PhD thesis of J.Antony at Insight Centre, Dublin, Ireland (2018).
+
+## How to cite
+
+```
+@article{tiulpin2019oarsigrading,
+  title={Automatic Grading of Individual Knee Osteoarthritis Features in Plain Radiographs using Deep Convolutional Neural Networks},
+  author={Tiulpin, Aleksei and Saarakkala, Simo},
+  journal={arXiv preprint arXiv:1907.08020},
+  year={2019}
+}
+```
 
 ## License
 
