@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-SNAPSHOTS_DIR=/media/lext/FAST/OARSI_grading_project/workdir/oarsi_grades_snapshots_weighing_exp/
-DATA_DIR=/media/lext/FAST/OARSI_grading_project/Data/datasets/
-META_DIR=/media/lext/FAST/OARSI_grading_project/
+SNAPSHOTS_DIR=/mnt/FAST/OARSI_grading_project/workdir/oarsi_grades_snapshots_weighing_exp/
+DATA_DIR=/mnt/FAST/OARSI_grading_project/Data/datasets/
+META_DIR=/mnt/FAST/OARSI_grading_project/
 SNP_PREF=2019_03_09
 
 cd scripts

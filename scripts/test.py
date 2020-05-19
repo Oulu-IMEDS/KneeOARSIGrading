@@ -56,6 +56,8 @@ if __name__ == "__main__":
         metadata = most_meta
     else:
         metadata = oai_meta
+    metadata.fname = metadata.fname.apply(lambda x: x.replace('/media/lext/FAST/OARSI_grading_project/Data/datasets/',
+                                                              args.dataset_root), 1)
 
     layers, dw, se = session_backup['args'][0].backbone_depth, \
         session_backup['args'][0].dw, \

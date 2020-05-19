@@ -47,7 +47,8 @@ if __name__ == "__main__":
 
     train_set = session_backup["args"][0].train_set
     metadata = session_backup[f'{train_set}_meta'][0]
-
+    metadata.fname = metadata.fname.apply(lambda x: x.replace('/media/lext/FAST/OARSI_grading_project/Data/datasets/',
+                                                              args.dataset_root), 1)
     layers, dw, se = session_backup['args'][0].backbone_depth, \
         session_backup['args'][0].dw, \
         session_backup['args'][0].se
@@ -55,8 +56,11 @@ if __name__ == "__main__":
     bb_name = backbone_name(layers, se, dw)
     print(colored('====> ', 'blue') + f'[{args.snapshot}] {bb_name}')
     predicts = []
-    fnames = []
+    subject_ids = []
     gt = []
+    sides = []
+    visits = []
+
     for fold_id in range(session_backup['args'][0].n_folds):
         print(colored('====> ', 'red') + f'Loading fold [{fold_id}]')
         snapshot_name = glob.glob(os.path.join(args.snapshots_root, args.snapshot, f'fold_{fold_id}*.pth'))
@@ -108,7 +112,9 @@ if __name__ == "__main__":
 
                 predicts.append(tmp_preds)
                 gt.append(batch['target'].to('cpu').numpy().squeeze())
-                fnames.extend(batch['ID'])
+                subject_ids.extend(batch['ID'])
+                sides.extend(batch['SIDE'].numpy().tolist())
+                visits.extend(batch['VISIT'])
 
     if not isinstance(predicts[0], tuple):
         gt, probs_oarsi = np.vstack(gt).squeeze(), np.vstack(predicts)
@@ -121,7 +127,9 @@ if __name__ == "__main__":
     save_fld = os.path.join(args.snapshots_root, args.snapshot, 'oof_inference')
     os.makedirs(save_fld, exist_ok=True)
     np.savez_compressed(os.path.join(save_fld, f'results_{"TTA" if args.tta else "plain"}.npz'),
-                        fnames=fnames,
+                        subject_ids=subject_ids,
+                        visits=visits,
+                        sides=sides,
                         gt=gt,
                         probs_oarsi=probs_oarsi,
                         probs_kl=probs_kl)
