@@ -1,0 +1,8 @@
+piepline: from_scratch_gwap
+training:
+  unfreeze_epoch: 0
+model:
+  backbone: resnet18
+  pretrained: false
+  pooling: gwap # `avg` - average pooling or `gwap` - global weighted average pooling
+  gwap_hidden: false # Whether to use a hidden layer from `gwap`

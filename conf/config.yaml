@@ -1,0 +1,31 @@
+seed: 2020
+workdir: workdir
+snapshot_dir: ${workdir}/snapshots/fold_${data.fold_id}/${pipeline}_${model.backbone}_${data.sampling}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+hydra:
+  run:
+    dir: ${snapshot_dir}
+model:
+  dropout: 0.5
+  cls_bnorm: false
+training:
+  batch_size: 32
+  n_threads: 10
+  optimizer:
+    lr: 0.01
+    weight_decay: 0.0001
+    eps: 1e-5
+  lr_scheduler:
+    milestones:
+      - 2
+      - 3
+    gamma: 0.1
+  no_kl: false # whether to train with or without KL grade
+data:
+  train_on: oai
+  n_folds: 5
+  fold_id: 0
+  dataset_dir: ${workdir}/data/
+  sampling: u # `u` - uniform or `klw` - weighted by KL grade, `mtw` -- multitask based weighting
+defaults:
+  - experiment: finetune
+  - data_processing: default

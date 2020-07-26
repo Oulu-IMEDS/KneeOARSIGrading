@@ -4,37 +4,37 @@ import pandas as pd
 import cv2
 import numpy as np
 import torch
+import hydra
 
 from torch.utils.data.sampler import Sampler
 from torch._six import int_classes as _int_classes
 
-from oarsigrading.dataset.metadata.oai import get_oai_meta
-from oarsigrading.dataset.metadata.most import get_most_meta
+from oarsigrading.data.metadata.oai import get_oai_meta
+from oarsigrading.data.metadata.most import get_most_meta
 
 
 def read_gs(fpath):
-    return cv2.imread(fpath)
+    return cv2.imread(str(fpath))
 
 
-def build_dataset_meta(args, img_dir_name='MOST_OAI_FULL_0_2'):
+def build_dataset_meta(dataset_dir):
     # SIDES numbering is made according to the OAI notation
     # SIDE=1 - Right
     # SIDE=2 - Left
-    img_paths = glob.glob(os.path.join(args.dataset_root, img_dir_name, '*.png'))
+    img_paths = list((dataset_dir / 'MOST_OAI_FULL_0_2').glob('*.png'))
 
-    patient_ids = list(map(lambda x: x.split('/')[-1].split('_')[0], img_paths))
+    patient_ids = list(map(lambda x: x.stem.split('_')[0], img_paths))
     files_metadata = pd.DataFrame(data={'fname': img_paths, 'ID': patient_ids})
     files_metadata['DS'] = files_metadata.apply(lambda x: 'MOST' if str(x[1]).startswith('M') else 'OAI', 1)
-    files_metadata.loc[:, 'VISIT'] = files_metadata.apply(lambda x: x[0].split('/')[-1].split('_')[1], 1)  # Follow up
-    files_metadata.loc[:, 'SIDE'] = files_metadata.apply(lambda x: 1 if x[0].
-                                                         split('/')[-1].
+    files_metadata.loc[:, 'VISIT'] = files_metadata.apply(lambda x: x[0].stem.split('_')[1], 1)  # Follow up
+    files_metadata.loc[:, 'SIDE'] = files_metadata.apply(lambda x: 1 if x[0].stem.
                                                          split('_')[-1][:-4] == 'R' else 2, 1).copy()
 
     files_metadata_oai = files_metadata[files_metadata['DS'] == 'OAI']
     files_metadata_most = files_metadata[files_metadata['DS'] == 'MOST']
 
-    oai_meta = get_oai_meta(os.path.join(args.meta_root, 'Data', 'metadata', 'OAI_meta'))
-    most_meta = get_most_meta(os.path.join(args.meta_root, 'Data', 'metadata', 'MOST_meta'))
+    oai_meta = get_oai_meta(dataset_dir / 'OAI_meta')
+    most_meta = get_most_meta(dataset_dir / 'MOST_meta')
     common_cols = oai_meta.columns.intersection(most_meta.columns)
 
     oai_meta = pd.merge(oai_meta[common_cols], files_metadata_oai, on=('ID', 'SIDE', 'VISIT'))

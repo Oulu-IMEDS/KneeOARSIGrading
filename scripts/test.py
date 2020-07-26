@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 
 from oarsigrading.kvs import GlobalKVS
-from oarsigrading.training.dataset import OARSIGradingDataset
+from oarsigrading.data.dataset import OARSIGradingDataset
 from oarsigrading.evaluation import metrics
 from oarsigrading.training.model_zoo import backbone_name
 from oarsigrading.training.model import OARSIGradingNet, OARSIGradingNetSiamese

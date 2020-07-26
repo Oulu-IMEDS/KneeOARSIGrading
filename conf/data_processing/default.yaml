@@ -1,0 +1,39 @@
+data:
+  image_size: 700
+  input_size: 310
+  train_crop_size: 300
+  trfs:
+    train:
+      stream:
+        transforms:
+          - pad:
+              pad_to: ${data.image_size}
+          - crop:
+              crop_to: ${data.image_size}
+              crop_mode: c
+          - resize:
+              resize_to: ${data.input_size}
+          - noise:
+              gain_range: 0.3
+          - rotate:
+              angle_range:
+                - 10
+                - 10
+              ignore_fast_mode: true # This enables full rotations (with black margins)
+          - crop:
+              crop_to: ${data.train_crop_size}
+              crop_mode: r
+          - gamma_correction:
+              gamma_range:
+                - 0.5
+                - 1.5
+    eval:
+      stream:
+        transforms:
+          - pad:
+              pad_to: ${data.image_size}
+          - crop:
+              crop_to: ${data.image_size}
+              crop_mode: c
+          - resize:
+              resize_to: ${data.input_size}

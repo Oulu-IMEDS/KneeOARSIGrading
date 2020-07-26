@@ -1,6 +1,6 @@
 import os
-from oarsigrading.dataset.metadata.constants import follow_up_dict_most
-from oarsigrading.dataset.metadata.utils import read_sas7bdat
+from oarsigrading.data.metadata.constants import follow_up_dict_most
+from oarsigrading.data.metadata.utils import read_sas7bdat
 import pandas as pd
 
 
@@ -8,10 +8,11 @@ def get_most_meta(meta_path):
     # SIDES numbering is made according to the OAI notation
     # SIDE=1 - Right
     # SIDE=2 - Left
-    print('==> Processing', os.path.join(meta_path, 'mostv01235xray.sas7bdat'))
-    most_meta = read_sas7bdat(os.path.join(meta_path, 'mostv01235xray.sas7bdat'))
+    meta_file = meta_path / 'mostv01235xray.sas7bdat'
+    print(f'==> Processing {meta_file}')
+    most_meta = read_sas7bdat(str(meta_file))
 
-    most_names_list = pd.read_csv(os.path.join(meta_path, 'MOST_names.csv'), header=None)[0].values.tolist()
+    most_names_list = pd.read_csv(meta_path / 'MOST_names.csv', header=None)[0].values.tolist()
     xray_types = pd.DataFrame(
         list(map(lambda x: (x.split('/')[0][:-5], follow_up_dict_most[int(x.split('/')[1][1])], x.split('/')[-2]),
                  most_names_list)), columns=['ID', 'VISIT', 'TYPE'])
@@ -42,4 +43,3 @@ def get_most_meta(meta_path):
     most_meta = most_meta[most_meta.TYPE == 'PA10']
     most_meta.drop('TYPE', axis=1, inplace=True)
     return most_meta
-

@@ -1,9 +1,7 @@
 from torch import nn
-import torch.nn.functional as F
-from oarsigrading.training.model_zoo import ResNet
+import timm
 from typing import Tuple
 import torch
-from termcolor import colored
 
 
 class GlobalWeightedAveragePooling(nn.Module):
@@ -14,18 +12,9 @@ class GlobalWeightedAveragePooling(nn.Module):
 
     """
 
-    def __init__(self, n_feats, use_hidden=False):
-        super().__init__()
-        if use_hidden:
-            self.conv = nn.Sequential(
-                nn.Conv2d(n_feats, n_feats, kernel_size=3, padding=1, stride=1),
-                nn.BatchNorm2d(n_feats),
-                nn.ReLU(True),
-                nn.Dropout2d(0.5),
-                nn.Conv2d(n_feats, 1, kernel_size=1, bias=True)
-            )
-        else:
-            self.conv = nn.Conv2d(n_feats, 1, kernel_size=1, bias=True)
+    def __init__(self, n_feats):
+        super(GlobalWeightedAveragePooling, self).__init__()
+        self.conv = nn.Conv2d(n_feats, 1, kernel_size=1, bias=True)
 
     def fscore(self, x: torch.Tensor):
         m = self.conv(x)
@@ -45,41 +34,32 @@ class GlobalWeightedAveragePooling(nn.Module):
 
 
 class ClassificationHead(nn.Module):
-    def __init__(self, n_features, n_cls, use_bnorm=True, drop=0.5, use_gwap=False,
-                 use_gwap_hidden=False, no_pool=False):
+    def __init__(self, n_features, n_cls, use_bnorm=True, dropout=0.5, use_gwap=False):
         super(ClassificationHead, self).__init__()
 
         clf_layers = []
         if use_bnorm:
             clf_layers.append(nn.BatchNorm1d(n_features))
 
-        if drop > 0:
-            clf_layers.append(nn.Dropout(drop))
+        if dropout > 0:
+            clf_layers.append(nn.Dropout(dropout))
 
         clf_layers.append(nn.Linear(n_features, n_cls))
 
         self.classifier = nn.Sequential(*clf_layers)
-        self.no_pool = no_pool
-
         if use_gwap:
-            self.gwap = GlobalWeightedAveragePooling(n_features, use_hidden=use_gwap_hidden)
+            self.pool = GlobalWeightedAveragePooling(n_features)
+        else:
+            self.pool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, o):
-        if not self.no_pool:
-            if not hasattr(self, 'gwap'):
-                avgp = F.adaptive_avg_pool2d(o, 1).view(o.size(0), -1)
-            else:
-                avgp = self.gwap(o).view(o.size(0), -1)
-        else:
-            avgp = o
-        clf_result = self.classifier(avgp)
+        pooled = self.pool(o).view(o.size(0), -1)
+        clf_result = self.classifier(pooled)
         return clf_result
 
 
 class MultiTaskHead(nn.Module):
-    def __init__(self, n_feats, n_tasks, n_cls: int or Tuple[int], clf_bnorm, dropout, use_gwap=False,
-                 use_gwap_hidden=False, no_pool=False):
-
+    def __init__(self, n_feats, n_tasks, n_cls: int or Tuple[int], clf_bnorm, dropout, use_gwap=False):
         super(MultiTaskHead, self).__init__()
 
         if isinstance(n_cls, int):
@@ -99,9 +79,7 @@ class MultiTaskHead(nn.Module):
                                                                                                  task_n_cls,
                                                                                                  clf_bnorm,
                                                                                                  dropout,
-                                                                                                 use_gwap,
-                                                                                                 use_gwap_hidden,
-                                                                                                 no_pool)
+                                                                                                 use_gwap)
 
     def forward(self, features):
         res = []
@@ -110,128 +88,31 @@ class MultiTaskHead(nn.Module):
         return res
 
 
-class OARSIGradingNet(nn.Module):
-    def __init__(self, bb_depth=50, dropout=0.5, cls_bnorm=False, se=False, dw=False,
-                 use_gwap=False, use_gwap_hidden=False, pretrained=True, no_kl=False):
-
-        super(OARSIGradingNet, self).__init__()
-        backbone = ResNet(se, dw, bb_depth, 0, 1, pretrained=pretrained)
-        self.encoder = backbone.encoder[:-1]
-        n_feats = backbone.classifier[-1].in_features
-        if use_gwap:
-            print(colored('====> ', 'green') + f'Task-specific weighted pooling will be used')
-            if use_gwap_hidden:
-                print(colored('====> ', 'green') + f'GWAP will have a hidden layer')
-        if no_kl:
-            self.classifier = MultiTaskHead(n_feats, (6, ), (4, ), cls_bnorm, dropout, use_gwap, use_gwap_hidden)
-        else:
-            self.classifier = MultiTaskHead(n_feats, (1, 6), (5, 4), cls_bnorm, dropout, use_gwap, use_gwap_hidden)
-
-    def forward(self, x):
-        features = self.encoder(x)
-        return self.classifier(features)
-
-
-def conv_block3(inp, out, stride, pad):
-    """
-    3x3 ConvNet building block with different activations support.
-
-    Aleksei Tiulpin, Unversity of Oulu, 2017 (c).
-    """
-    return nn.Sequential(
-        nn.Conv2d(inp, out, kernel_size=3, stride=stride, padding=pad),
-        nn.BatchNorm2d(out, eps=1e-3),
-        nn.ReLU(inplace=True)
+def gen_model_parts(cfg):
+    backbone = timm.create_model(cfg.model.backbone, pretrained=cfg.model.pretrained)
+    feature_dim = backbone.fc.in_features
+    features = nn.Sequential(
+        backbone.conv1,
+        backbone.bn1,
+        backbone.act1,
+        backbone.maxpool,
+        backbone.layer1,
+        backbone.layer2,
+        backbone.layer3,
+        backbone.layer4,
     )
 
-
-def weights_init_uniform(m):
-    """
-    Initializes the weights using kaiming method.
-    """
-    if isinstance(m, nn.Conv2d):
-        nn.init.kaiming_uniform(m.weight.data)
-        m.bias.data.fill_(0)
-
-    if isinstance(m, nn.Linear):
-        nn.init.kaiming_uniform(m.weight.data)
-        m.bias.data.fill_(0)
-
-
-class Branch(nn.Module):
-    def __init__(self, bw):
-        super().__init__()
-        """
-        self.block1 = nn.Sequential(conv_block3(3, bw, 2, 0),
-                                    conv_block3(bw, bw, 1, 0),
-                                    conv_block3(bw, bw, 1, 0),
-                                    )
-
-        self.block2 = nn.Sequential(conv_block3(bw, bw * 2, 1, 0),
-                                    conv_block3(bw * 2, bw * 2, 1, 0),
-                                    )
-
-        self.block3 = conv_block3(bw * 2, bw * 4, 1, 0)
-
-        self.block4 = conv_block3(bw * 4, bw * 4, 1, 0)
-        """
-        self.block1 = nn.Sequential(conv_block3(3, bw, 2, 0),
-                                    conv_block3(bw, bw, 1, 0),
-                                    )
-
-        self.block2 = nn.Sequential(conv_block3(bw, bw * 2, 1, 1),
-                                    conv_block3(bw * 2, bw * 4, 1, 1),
-                                    )
-
-        self.block3 = nn.Sequential(conv_block3(bw * 4, bw * 4, 1, 1),
-                                    conv_block3(bw * 4, bw * 4, 1, 1))
-
-        self.block4 = nn.Sequential(conv_block3(bw * 4, bw * 8, 1, 1),
-                                    conv_block3(bw * 8, bw * 8, 1, 1))
-
-    def forward(self, x):
-        o1 = F.max_pool2d(self.block1(x), 2)
-        o2 = F.max_pool2d(self.block2(o1), 2)
-        o3 = F.max_pool2d(self.block3(o2), 2)
-
-        return F.adaptive_avg_pool2d(self.block4(o3), 1).view(x.size(0), -1)
-
-
-class OARSIGradingNetSiamese(nn.Module):
-    def __init__(self, backbone='lext', dropout=0.5):
-        super(OARSIGradingNetSiamese, self).__init__()
-
-        if backbone == 'lext':
-            self.encoder = Branch(64)
-            n_feats = 64*8*2
-            self.classifier = MultiTaskHead(n_feats, (1, 6), (5, 4), False, dropout, False, False, True)
-            self.apply(weights_init_uniform)
-        elif backbone == 'resnet-18':
-            backbone = ResNet(False, False, 18, 0, 1)
-            self.encoder = backbone.encoder[:-1]
-            n_feats = backbone.classifier[-1].in_features*2
-            self.classifier = MultiTaskHead(n_feats, (1, 6), (5, 4), False, dropout, False, False, False)
-
-    def forward(self, med, lat):
-        f_med = self.encoder(med)
-        f_lat = self.encoder(lat)
-
-        features = torch.cat([f_lat, f_med], 1)
-        return self.classifier(features)
-
-
-class MultiTaskClassificationLoss(nn.Module):
-    def __init__(self):
-        super(MultiTaskClassificationLoss, self).__init__()
-        self.cls_loss = nn.CrossEntropyLoss()
-
-    def forward(self, pred, target_cls):
-        loss = 0
-        n_tasks = len(pred)
-
-        for task_id in range(n_tasks):
-            loss += self.cls_loss(pred[task_id], target_cls[:, task_id])
-
-        loss /= n_tasks
-
-        return loss
+    if cfg.training.no_kl:
+        classifier = MultiTaskHead(feature_dim,
+                                        n_tasks=(6,), n_cls=(4,),
+                                        clf_bnorm=cfg.model.cls_bnorm,
+                                        dropout=cfg.model.dropout,
+                                        use_gwap=cfg.model.pooling == 'gwap')
+    else:
+        classifier = MultiTaskHead(feature_dim,
+                                        n_tasks=(1, 6),
+                                        n_cls=(5, 4),
+                                        clf_bnorm=cfg.model.cls_bnorm,
+                                        dropout=cfg.model.dropout,
+                                        use_gwap=cfg.model.pooling == 'gwap')
+    return features, classifier

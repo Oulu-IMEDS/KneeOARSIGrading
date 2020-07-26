@@ -1,0 +1,7 @@
+pipeline: from_scratch
+training:
+  unfreeze_epoch: 0
+model:
+  backbone: resnet18
+  pretrained: false
+  pooling: avg # `avg` - average pooling or `gwap` - global weighted average pooling

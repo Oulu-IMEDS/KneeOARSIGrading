@@ -1,0 +1,7 @@
+pipeline: finetuning
+training:
+  unfreeze_epoch: 2
+model:
+  backbone: resnet18
+  pretrained: true
+  pooling: avg # `avg` - average pooling or `gwap` - global weighted average pooling
