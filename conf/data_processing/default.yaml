@@ -38,3 +38,6 @@ data:
               crop_mode: c
           - resize:
               resize_to: ${data.input_size}
+          - crop:
+              crop_to: ${data.train_crop_size}
+              crop_mode: c

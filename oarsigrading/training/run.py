@@ -11,11 +11,11 @@ def main(cfg):
 
     lightning_module = OARSIGradingPipeline(cfg)
     trainer = Trainer(replace_sampler_ddp=False,
-                      distributed_backend='dp',
-                      gpus=3,
+                      gpus=1,
                       auto_select_gpus=True,
                       deterministic=True,
                       num_sanity_val_steps=0,
+                      print_nan_grads=True,
                       max_epochs=cfg.training.n_epochs)
     trainer.fit(lightning_module)
 

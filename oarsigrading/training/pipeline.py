@@ -187,7 +187,8 @@ class OARSIGradingPipeline(pl.LightningModule):
         targets = torch.cat(targets, 0)
         preds = torch.cat(preds, 0)
         metrics = {'loss/val': val_loss / len(outputs)}
-        metrics.update({f'val/{k}': v for k, v in compute_metrics(targets, preds).items()})
+        metrics.update({f'val/{k}': v for k, v in compute_metrics(targets, preds,
+                                                                  no_kl=self.cfg.training.no_kl).items()})
 
         return {'progress_bar': metrics, 'log': metrics, 'loss': metrics[f'loss/val']}
 
