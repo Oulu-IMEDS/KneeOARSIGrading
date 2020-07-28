@@ -6,8 +6,8 @@ def parse_args():
     parser.add_argument('--n_epochs', type=int, default=20, help='Number of training epochs')
     parser.add_argument('--n_folds', type=int, default=5, help='Number of training epochs')
     parser.add_argument('--fold', type=int, default=-1, help='Fold to train. -1 means train all folds in a row')
-    parser.add_argument('--dataset_root', type=str, default='/media/lext/FAST/OARSI_grading_project/Data/datasets/')
-    parser.add_argument('--meta_root', type=str, default='/media/lext/FAST/OARSI_grading_project/')
+    parser.add_argument('--dataset_root', type=str, default='workdir/data/')
+    parser.add_argument('--meta_root', type=str, default='workdir/data')
     parser.add_argument('--train_set', type=str, default='oai', choices=['most', 'oai'],
                         help='Dataset to be used for testing.')
 
@@ -47,7 +47,7 @@ def parse_args():
     parser.add_argument('--unfreeze_epoch', type=int, default=1,
                         help='Epoch at which to unfreeze the layers of the backbone')
 
-    parser.add_argument('--snapshots', default='/media/lext/FAST/OARSI_grading_project/workdir/oarsi_grades_snapshots/',
+    parser.add_argument('--snapshots', default='workdir/snapshots/',
                         help='Folder for saving snapshots')
     parser.add_argument('--n_threads', default=16, type=int, help='Number of parallel threads for Data Loader')
     parser.add_argument('--seed', type=int, default=42, help='Random Seed')

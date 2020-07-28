@@ -33,8 +33,8 @@ def build_dataset_meta(args, img_dir_name='MOST_OAI_FULL_0_2'):
     files_metadata_oai = files_metadata[files_metadata['DS'] == 'OAI']
     files_metadata_most = files_metadata[files_metadata['DS'] == 'MOST']
 
-    oai_meta = get_oai_meta(os.path.join(args.meta_root, 'Data', 'metadata', 'OAI_meta'))
-    most_meta = get_most_meta(os.path.join(args.meta_root, 'Data', 'metadata', 'MOST_meta'))
+    oai_meta = get_oai_meta(os.path.join(args.meta_root, 'OAI_meta'))
+    most_meta = get_most_meta(os.path.join(args.meta_root, 'MOST_meta'))
     common_cols = oai_meta.columns.intersection(most_meta.columns)
 
     oai_meta = pd.merge(oai_meta[common_cols], files_metadata_oai, on=('ID', 'SIDE', 'VISIT'))
