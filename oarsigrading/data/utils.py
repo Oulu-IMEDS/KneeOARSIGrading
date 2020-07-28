@@ -28,7 +28,7 @@ def build_dataset_meta(dataset_dir):
     files_metadata['DS'] = files_metadata.apply(lambda x: 'MOST' if str(x[1]).startswith('M') else 'OAI', 1)
     files_metadata.loc[:, 'VISIT'] = files_metadata.apply(lambda x: x[0].stem.split('_')[1], 1)  # Follow up
     files_metadata.loc[:, 'SIDE'] = files_metadata.apply(lambda x: 1 if x[0].stem.
-                                                         split('_')[-1][:-4] == 'R' else 2, 1).copy()
+                                                         split('_')[-1] == 'R' else 2, 1).copy()
 
     files_metadata_oai = files_metadata[files_metadata['DS'] == 'OAI']
     files_metadata_most = files_metadata[files_metadata['DS'] == 'MOST']
