@@ -1,6 +1,6 @@
 pipeline: finetuning
 training:
-  unfreeze_epoch: 1
+  unfreeze_epoch: 2
 model:
   backbone: resnet18
   pretrained: true
