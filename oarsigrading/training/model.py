@@ -34,11 +34,11 @@ class GlobalWeightedAveragePooling(nn.Module):
 
 
 class ClassificationHead(nn.Module):
-    def __init__(self, n_features, n_cls, use_bnorm=True, dropout=0.5, use_gwap=False):
+    def __init__(self, n_features, n_cls, dropout, clf_bnorm, use_gwap=False):
         super(ClassificationHead, self).__init__()
 
         clf_layers = []
-        if use_bnorm:
+        if clf_bnorm:
             clf_layers.append(nn.BatchNorm1d(n_features))
 
         if dropout > 0:
@@ -63,7 +63,7 @@ class MultiTaskHead(nn.Module):
         super(MultiTaskHead, self).__init__()
 
         if isinstance(n_cls, int):
-            n_cls = (n_cls, )
+            n_cls = (n_cls,)
 
         if isinstance(n_tasks, int):
             n_tasks = (n_tasks,)
@@ -75,11 +75,11 @@ class MultiTaskHead(nn.Module):
 
         for task_type_idx, (n_tasks, task_n_cls) in enumerate(zip(self.n_tasks, self.n_cls)):
             for task_idx in range(n_tasks):
-                self.__dict__['_modules'][f'head_{task_type_idx+task_idx}'] = ClassificationHead(n_feats,
-                                                                                                 task_n_cls,
-                                                                                                 clf_bnorm,
-                                                                                                 dropout,
-                                                                                                 use_gwap)
+                self.__dict__['_modules'][f'head_{task_type_idx + task_idx}'] = ClassificationHead(n_feats,
+                                                                                                   task_n_cls,
+                                                                                                   dropout,
+                                                                                                   clf_bnorm,
+                                                                                                   use_gwap)
 
     def forward(self, features):
         res = []
@@ -89,30 +89,29 @@ class MultiTaskHead(nn.Module):
 
 
 def gen_model_parts(cfg):
-    backbone = timm.create_model(cfg.model.backbone, pretrained=cfg.model.pretrained)
-    feature_dim = backbone.fc.in_features
+    backbone = timm.create_model(model_name=cfg.model.backbone, pretrained=cfg.model.pretrained)
     features = nn.Sequential(
-        backbone.conv1,
-        backbone.bn1,
-        backbone.act1,
-        backbone.maxpool,
-        backbone.layer1,
-        backbone.layer2,
-        backbone.layer3,
-        backbone.layer4,
-    )
-
+            backbone.conv1,
+            backbone.bn1,
+            backbone.act1,
+            backbone.maxpool,
+            backbone.layer1,
+            backbone.layer2,
+            backbone.layer3,
+            backbone.layer4,
+        )
+    n_features = backbone.fc.in_features
     if cfg.training.no_kl:
-        classifier = MultiTaskHead(feature_dim,
-                                        n_tasks=(6,), n_cls=(4,),
-                                        clf_bnorm=cfg.model.cls_bnorm,
-                                        dropout=cfg.model.dropout,
-                                        use_gwap=cfg.model.pooling == 'gwap')
+        classifier = MultiTaskHead(n_feats=n_features,
+                                   n_tasks=(6,), n_cls=(4,),
+                                   clf_bnorm=cfg.model.cls_bnorm,
+                                   dropout=cfg.model.dropout,
+                                   use_gwap=cfg.model.pooling == 'gwap')
     else:
-        classifier = MultiTaskHead(feature_dim,
-                                        n_tasks=(1, 6),
-                                        n_cls=(5, 4),
-                                        clf_bnorm=cfg.model.cls_bnorm,
-                                        dropout=cfg.model.dropout,
-                                        use_gwap=cfg.model.pooling == 'gwap')
+        classifier = MultiTaskHead(n_feats=n_features,
+                                   n_tasks=(1, 6),
+                                   n_cls=(5, 4),
+                                   clf_bnorm=cfg.model.cls_bnorm,
+                                   dropout=cfg.model.dropout,
+                                   use_gwap=cfg.model.pooling == 'gwap')
     return features, classifier

@@ -6,7 +6,8 @@ from pathlib import Path
 from sklearn.model_selection import GroupKFold
 from torch.utils.data import DataLoader
 import hydra
-
+import numpy as np
+from tqdm import tqdm
 
 from oarsigrading.data.utils import build_dataset_meta
 from oarsigrading.data.utils import make_weights_for_multiclass, WeightedRandomSampler
@@ -31,6 +32,8 @@ class OARSIGradingPipeline(pl.LightningModule):
         self.train_metadata = None
         self.val_metadata = None
         self.test_metadata = None
+        self.mean_std = None
+
         if original_cwd is None:
             original_cwd = Path(hydra.utils.get_original_cwd())
         self.workdir = original_cwd / cfg.workdir
@@ -40,7 +43,6 @@ class OARSIGradingPipeline(pl.LightningModule):
         self.criterion = MultiTaskClassificationLoss()
 
     def prepare_data(self) -> None:
-
         if not (self.workdir / 'oai_meta.pkl').is_file():
             oai_meta, most_meta = build_dataset_meta(self.dataset_dir)
             oai_meta.to_pickle(self.workdir / 'oai_meta.pkl', compression='infer', protocol=4)
@@ -65,6 +67,38 @@ class OARSIGradingPipeline(pl.LightningModule):
         self.val_metadata = train_meta_all.iloc[val_idx]
         self.test_metadata = most_meta if self.cfg.data.train_on == 'oai' else oai_meta
 
+        self.mean_std = self.init_mean_std()
+
+    def init_mean_std(self):
+        if (self.workdir / f'mean_std_{self.cfg.data.train_on}.npy').is_file():
+            tmp = np.load(self.workdir / f'mean_std_{self.cfg.data.train_on}.npy')
+            mean_vector, std_vector = tmp
+        else:
+            train_trfs = solt.utils.from_yaml(self.cfg.data.trfs.train.to_container(resolve=True))
+
+            train_ds = OARSIGradingDataset(self.cfg,
+                                           self.train_metadata,
+                                           train_trfs, normalize=False)
+            tmp_loader = DataLoader(train_ds, batch_size=self.cfg.training.batch_size,
+                                    num_workers=self.cfg.training.n_threads)
+            mean_vector = None
+            std_vector = None
+            for batch in tqdm(tmp_loader, total=len(tmp_loader)):
+                imgs = batch['image']
+                if mean_vector is None:
+                    mean_vector = np.zeros(imgs.size(1))
+                    std_vector = np.zeros(imgs.size(1))
+                for j in range(mean_vector.shape[0]):
+                    mean_vector[j] += imgs[:, j, :, :].mean()
+                    std_vector[j] += imgs[:, j, :, :].std()
+
+            mean_vector /= len(tmp_loader)
+            std_vector /= len(tmp_loader)
+            np.save(self.workdir / f'mean_std_{self.cfg.data.train_on}.npy',
+                    [mean_vector.astype(np.float32), std_vector.astype(np.float32)])
+
+        return mean_vector, std_vector
+
     def init_sampler(self):
         if self.cfg.data.sampling == 'klw':
             _, weights = make_weights_for_multiclass(self.train_metadata.XRKL.values.astype(int))
@@ -82,9 +116,13 @@ class OARSIGradingPipeline(pl.LightningModule):
         return sampler
 
     def train_dataloader(self):
+        train_trfs = solt.utils.from_yaml(self.cfg.data.trfs.train.to_container(resolve=True))
+
         train_ds = OARSIGradingDataset(self.cfg,
                                        self.train_metadata,
-                                       solt.utils.from_yaml(self.cfg.data.trfs.train.to_container(resolve=True)))
+                                       train_trfs,
+                                       mean=self.mean_std[0],
+                                       std=self.mean_std[1])
         sampler = self.init_sampler()
         train_loader = DataLoader(train_ds, batch_size=self.cfg.training.batch_size,
                                   num_workers=self.cfg.training.n_threads,
@@ -94,9 +132,11 @@ class OARSIGradingPipeline(pl.LightningModule):
     def val_dataloader(self):
         val_dataset = OARSIGradingDataset(self.cfg,
                                           self.val_metadata,
-                                          solt.utils.from_yaml(self.cfg.data.trfs.eval.to_container(resolve=True)))
+                                          solt.utils.from_yaml(self.cfg.data.trfs.eval.to_container(resolve=True)),
+                                          mean=self.mean_std[0],
+                                          std=self.mean_std[1])
 
-        val_loader = DataLoader(val_dataset, batch_size=self.cfg.training.batch_size,
+        val_loader = DataLoader(val_dataset, batch_size=self.cfg.training.val_batch_size,
                                 num_workers=self.cfg.training.n_threads, shuffle=False)
         return val_loader
 
@@ -104,17 +144,18 @@ class OARSIGradingPipeline(pl.LightningModule):
         if self.cfg.training.unfreeze_epoch == 0:
             self.classifier.train(True)
             self.features.train(True)
-            p = [{'params': self.model.parameters()}]
+            p = [{'params': self.features.parameters()},
+                 {'params': self.classifier.parameters()}]
         else:
             self.classifier.train(True)
             self.features.train(False)
+
             for name, param in self.features.named_parameters():
                 param.requires_grad = False
             p = [{'params': self.classifier.parameters()}]
         return torch.optim.Adam(params=p,
                                 lr=self.cfg.training.optimizer.lr,
-                                weight_decay=self.cfg.training.optimizer.weight_decay,
-                                eps=self.cfg.training.optimizer.eps)
+                                weight_decay=self.cfg.training.optimizer.weight_decay)
 
     def forward(self, x):
         return self.classifier(self.features(x))
@@ -129,7 +170,7 @@ class OARSIGradingPipeline(pl.LightningModule):
         targets = batch['target'].squeeze()
         preds = self(batch['image'])
         loss = self.criterion(preds, targets)
-        outputs = {'loss': loss, 'preds': preds, 'targets': targets}
+        outputs = {'loss': loss, 'preds': [p.softmax(1) for p in preds], 'targets': targets}
         return outputs
 
     def validation_epoch_end(self, outputs):
@@ -153,10 +194,9 @@ class OARSIGradingPipeline(pl.LightningModule):
     def on_epoch_start(self) -> None:
         if self.cfg.training.unfreeze_epoch == self.current_epoch and self.current_epoch > 0:
             Logger.log_info(f'[{self.current_epoch}] Unfreezing the whole model...')
-            self.features.train(True)
-            self.classifier.train(True)
             for name, param in self.features.named_parameters():
                 param.requires_grad = True
+            self.features.train(True)
             self.trainer.optimizers[0].add_param_group({'params': self.features.parameters()})
 
         for milestone in self.cfg.training.lr_scheduler.milestones:

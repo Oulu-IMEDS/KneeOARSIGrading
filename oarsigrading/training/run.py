@@ -15,7 +15,8 @@ def main(cfg):
                       gpus=1,
                       auto_select_gpus=True,
                       deterministic=True,
-                      num_sanity_val_steps=0)
+                      num_sanity_val_steps=0,
+                      max_epochs=cfg.training.n_epochs)
     trainer.fit(lightning_module)
 
 
