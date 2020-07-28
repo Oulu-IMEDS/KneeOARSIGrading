@@ -10,8 +10,10 @@ def main(cfg):
     seed_everything(cfg.seed)
 
     lightning_module = OARSIGradingPipeline(cfg)
+
     trainer = Trainer(replace_sampler_ddp=False,
-                      gpus=1,
+                      gpus=3,
+                      distributed_backend='dp',
                       auto_select_gpus=True,
                       deterministic=True,
                       num_sanity_val_steps=0,
