@@ -12,7 +12,7 @@ def main(cfg):
     lightning_module = OARSIGradingPipeline(cfg)
     trainer = Trainer(replace_sampler_ddp=False,
                       distributed_backend='dp',
-                      gpus=1,
+                      gpus=3,
                       auto_select_gpus=True,
                       deterministic=True,
                       num_sanity_val_steps=0,

@@ -7,7 +7,7 @@ class MultiTaskClassificationLoss(nn.Module):
         self.cls_loss = nn.CrossEntropyLoss()
 
     def forward(self, pred, target_cls):
-        loss = 0
+        loss = 0.
         n_tasks = len(pred)
 
         for task_id in range(n_tasks):

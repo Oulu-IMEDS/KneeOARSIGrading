@@ -8,7 +8,7 @@ model:
   dropout: 0.5
   cls_bnorm: false
 training:
-  n_epochs: 50
+  n_epochs: 20
   batch_size: 32
   val_batch_size: 128
   n_threads: 10
