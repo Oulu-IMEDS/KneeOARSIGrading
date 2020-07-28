@@ -1,4 +1,5 @@
 import hydra
+import torch
 from pathlib import Path
 from pytorch_lightning.utilities.seed import seed_everything
 from pytorch_lightning import Trainer
@@ -20,6 +21,7 @@ def main(cfg):
                       print_nan_grads=True,
                       max_epochs=cfg.training.n_epochs)
     trainer.fit(lightning_module)
+    torch.cuda.empty_cache()
 
 
 if __name__ == '__main__':
