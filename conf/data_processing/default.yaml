@@ -10,7 +10,7 @@ data:
               pad_to: ${data.image_size}
           - crop:
               crop_to: ${data.image_size}
-              crop_mode: c
+              crop_mode: r
           - resize:
               resize_to: ${data.input_size}
           - noise:
