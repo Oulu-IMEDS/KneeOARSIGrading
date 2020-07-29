@@ -1,6 +1,10 @@
 piepline: from_scratch_gwap
 training:
   unfreeze_epoch: 0
+  lr_scheduler:
+    milestones:
+      - 10
+      - 15
 model:
   backbone: resnet18
   pretrained: false
