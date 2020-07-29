@@ -8,6 +8,7 @@ model:
   dropout: 0.5
   cls_bnorm: false
 training:
+  gpus: 3
   n_epochs: 20
   batch_size: 32
   val_batch_size: 128
