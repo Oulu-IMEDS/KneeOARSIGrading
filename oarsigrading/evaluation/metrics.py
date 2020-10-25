@@ -97,9 +97,9 @@ def bootstrap_ci(metric, y, preds, n_bootstrap, seed=12345, stratified=True, alp
         else:
             ind = np.random.choice(y.shape[0], y.shape[0])
 
-        if y[ind].sum() == 0:
-            continue
-        metric_vals.append(metric(y[ind], preds[ind]))
+        m = metric(y[ind], preds[ind])
+        if m is not None:
+            metric_vals.append(m)
 
     metric_val = metric(y, preds)
     ci_l = np.percentile(metric_vals, (100 - alpha) // 2)
